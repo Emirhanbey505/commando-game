@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMANDO - Start Fixed</title>
+<title>COMMANDO - No Start Button</title>
 <style>
 body{margin:0;overflow:hidden;background:#000;font-family:Arial;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;color:white;font-size:15px;z-index:10;background:rgba(0,0,0,0.65);padding:10px;border-radius:8px}
@@ -14,52 +14,24 @@ button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:no
 #joyKnob{position:absolute;top:35px;left:35px;width:50px;height:50px;background:white;border-radius:50%}
 #joyText{position:absolute;top:5px;left:0;width:100%;text-align:center;color:white;font-size:12px}
 #soundBtn{position:fixed;top:10px;right:10px;z-index:30;background:#ffcc00;color:black;padding:8px 12px;border-radius:8px;font-size:14px}
-#startOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center}
-#startBtn{font-size:26px;padding:18px 40px;background:#c0392b;color:white;border:3px solid white;border-radius:12px;touch-action:auto}
 </style>
 </head>
 <body>
-<div id="hud">COMMANDO | MOUNTAIN BASE<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span></div>
+<div id="hud">COMMANDO | MOUNTAIN BASE<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span><br>Seedha Khelo - Koi Start Nahi</div>
 <div id="cross">+</div>
 <div id="msg"></div>
 <div id="joyBase"><div id="joyText">MOVE</div><div id="joyKnob"></div></div>
 <button id="fire">FIRE</button>
 <button id="soundBtn">SOUND: ON 🔊</button>
-<div id="startOverlay">
-  <h1 style="font-size:42px;color:#ffcc00;margin:0">COMMANDO</h1>
-  <p>MOUNTAIN MILITARY BASE</p>
-  <p>6 Dushman - Base Clear Karo!</p>
-  <button id="startBtn">▶ START MISSION</button>
-  <p style="font-size:13px;margin-top:15px">Is button ko dabayein</p>
-  <p id="debugText" style="color:#aaa;font-size:12px"></p>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// === SOUND ===
 let audioCtx=null; let soundOn=true;
-let gunAudio=new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_2c8c1b4b8d.mp3');
 function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }
-function playGun(){ if(!soundOn) return; try{ gunAudio.currentTime=0; gunAudio.play().catch(()=>playGunSynth()); }catch(e){ playGunSynth(); } }
-function playGunSynth(){ if(!audioCtx) return; let t=audioCtx.currentTime; let buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*0.35,audioCtx.sampleRate); let d=buffer.getChannelData(0); for(let i=0;i<d.length;i++){ let p=i/d.length; d[i]=(Math.random()*2-1)*Math.pow(1-p,2.5); if(i<200) d[i]*=3; } let src=audioCtx.createBufferSource(); src.buffer=buffer; let filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.setValueAtTime(3000,t); filter.frequency.exponentialRampToValueAtTime(200,t+0.3); let gain=audioCtx.createGain(); gain.gain.setValueAtTime(1.0,t); gain.gain.exponentialRampToValueAtTime(0.01,t+0.35); src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); src.start(); let osc=audioCtx.createOscillator(); osc.frequency.setValueAtTime(100,t); osc.frequency.exponentialRampToValueAtTime(35,t+0.25); let g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.9,t); g2.gain.exponentialRampToValueAtTime(0.01,t+0.25); osc.connect(g2); g2.connect(audioCtx.destination); osc.start(); osc.stop(t+0.25); }
+function playGun(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime; let buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*0.35,audioCtx.sampleRate); let d=buffer.getChannelData(0); for(let i=0;i<d.length;i++){ let p=i/d.length; d[i]=(Math.random()*2-1)*Math.pow(1-p,2.5); if(i<200) d[i]*=3; } let src=audioCtx.createBufferSource(); src.buffer=buffer; let filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.setValueAtTime(3000,t); filter.frequency.exponentialRampToValueAtTime(200,t+0.3); let gain=audioCtx.createGain(); gain.gain.setValueAtTime(1.0,t); gain.gain.exponentialRampToValueAtTime(0.01,t+0.35); src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); src.start(); let osc=audioCtx.createOscillator(); osc.frequency.setValueAtTime(100,t); osc.frequency.exponentialRampToValueAtTime(35,t+0.25); let g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.9,t); g2.gain.exponentialRampToValueAtTime(0.01,t+0.25); osc.connect(g2); g2.connect(audioCtx.destination); osc.start(); osc.stop(t+0.25); }
 function playHit(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; let osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.setValueAtTime(200,t); osc.frequency.exponentialRampToValueAtTime(40,t+0.5); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.5); osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); }
-function playStart(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; for(let i=0;i<2;i++){ let osc=audioCtx.createOscillator(); osc.type='square'; osc.frequency.setValueAtTime(440,t+i*0.4); osc.frequency.setValueAtTime(880,t+i*0.4+0.2); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.2,t+i*0.4); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.4+0.35); osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.4); osc.stop(t+i*0.4+0.35); } }
 function playWin(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; [523,659,784,1046].forEach((f,i)=>{ let osc=audioCtx.createOscillator(); osc.frequency.value=f; let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t+i*0.2); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.2+0.3); osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.2); osc.stop(t+i*0.2+0.3); }); }
 function playLose(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; let osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.setValueAtTime(300,t); osc.frequency.exponentialRampToValueAtTime(60,t+1); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.01,t+1); osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+1); }
-
-// === START BUTTON FIX - Touch + Click Dono ===
-let gameStarted=false;
-function startGame(){
-  if(gameStarted) return; gameStarted=true;
-  initAudio(); playStart();
-  document.getElementById('startOverlay').style.display='none';
-  document.getElementById('debugText').innerText='';
-}
-let startBtn=document.getElementById('startBtn');
-startBtn.addEventListener('touchstart',function(e){ e.preventDefault(); e.stopPropagation(); startGame(); },{passive:false});
-startBtn.addEventListener('click',function(e){ e.preventDefault(); startGame(); });
-startBtn.addEventListener('touchend',function(e){ e.preventDefault(); startGame(); });
-
 document.getElementById('soundBtn').addEventListener('click',()=>{ soundOn=!soundOn; document.getElementById('soundBtn').innerText=soundOn?'SOUND: ON 🔊':'SOUND: OFF 🔇'; if(soundOn) initAudio(); });
 
 let scene=new THREE.Scene(); scene.background=new THREE.Color(0x87ceeb); scene.fog=new THREE.Fog(0x87ceeb,40,160);
@@ -103,4 +75,18 @@ function makeSoldier(x,z){
 }
 let enemies=[]; let left=6; let hp=100; let walkTime=0;
 for(let i=0;i<6;i++){ enemies.push(makeSoldier(-20+i*8,-30-Math.random()*5)); }
-let yaw=0, pitch=0, lookTouchId=null, lastLookX=0
+let yaw=0, pitch=0, lookTouchId=null, lastLookX=0, lastLookY=0, joyTouchId=null, joyX=0, joyY=0;
+let joyBase=document.getElementById('joyBase'), joyKnob=document.getElementById('joyKnob');
+function handleJoy(t){ let r=joyBase.getBoundingClientRect(); let cx=r.left+r.width/2, cy=r.top+r.height/2; let dx=(t.clientX-cx)/40, dy=(t.clientY-cy)/40; let len=Math.sqrt(dx*dx+dy*dy); if(len>1){ dx/=len; dy/=len; } joyX=dx; joyY=dy; joyKnob.style.left=(35+dx*25)+'px'; joyKnob.style.top=(35+dy*25)+'px'; }
+function resetJoy(){ joyX=0; joyY=0; joyKnob.style.left='35px'; joyKnob.style.top='35px'; }
+document.addEventListener('touchstart',function(e){ for(let t of e.changedTouches){ let el=document.elementFromPoint(t.clientX,t.clientY); if(el && (el.id==='fire'||el.id==='soundBtn')) continue; if(el && (el.id==='joyBase'||el.id==='joyKnob'||el.id==='joyText'||joyBase.contains(el))){ joyTouchId=t.identifier; handleJoy(t); continue; } if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; } } },{passive:false});
+document.addEventListener('touchmove',function(e){ for(let t of e.changedTouches){ if(t.identifier===joyTouchId){ handleJoy(t); e.preventDefault(); continue; } if(t.identifier===lookTouchId){ let dx=t.clientX-lastLookX, dy=t.clientY-lastLookY; yaw-=dx*0.005; pitch-=dy*0.005; if(pitch>0.6) pitch=0.6; if(pitch<-0.6) pitch=-0.6; camera.rotation.order='YXZ'; camera.rotation.y=yaw; camera.rotation.x=pitch; lastLookX=t.clientX; lastLookY=t.clientY; e.preventDefault(); } } },{passive:false});
+document.addEventListener('touchend',function(e){ for(let t of e.changedTouches){ if(t.identifier===lookTouchId) lookTouchId=null; if(t.identifier===joyTouchId){ joyTouchId=null; resetJoy(); } } });
+let keys={}; document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true); document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+function shoot(){ playGun(); let ray=new THREE.Raycaster(); ray.setFromCamera({x:0,y:0},camera); let all=[]; enemies.forEach(g=>g.children.forEach(c=>all.push(c))); let hits=ray.intersectObjects(all); if(hits.length>0){ playHit(); let parent=hits[0].object; while(parent.parent!==scene) parent=parent.parent; scene.remove(parent); enemies=enemies.filter(e=>e!==parent); left--; document.getElementById('left').innerText=left; gunGroup.position.z=-0.6; setTimeout(()=>gunGroup.position.z=-0.8,80); if(left===0){ playWin(); document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='BASE CLEAR!<br>COMMANDO WINS!<br><br><button onclick="location.reload()">PLAY AGAIN</button>'; } } }
+document.getElementById('fire').addEventListener('touchstart',function(e){ e.stopPropagation(); initAudio(); shoot(); });
+function animate(){ requestAnimationFrame(animate); let dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; dir.normalize(); let right=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,1,0)); let mx=0, mz=0; if(keys['w']) mz+=1; if(keys['s']) mz-=1; if(keys['a']) mx-=1; if(keys['d']) mx+=1; mx+=joyX; mz+=-joyY; let isWalking=(mx!==0||mz!==0); if(isWalking){ camera.position.addScaledVector(dir,mz*0.15); camera.position.addScaledVector(right,mx*0.15); walkTime+=0.3; camera.position.y=1.7+Math.sin(walkTime)*0.05; } let t=Date.now()*0.004; enemies.forEach((e,i)=>{ e.position.z+=0.022; e.rotation.y=Math.sin(t+i)*0.08; e.userData.legL.rotation.x=Math.sin(t*2.2+i)*0.8; e.userData.legR.rotation.x=Math.sin(t*2.2+i+Math.PI)*0.8; e.userData.armL.rotation.x=Math.sin(t*2.2+i+Math.PI)*0.6; e.userData.armR.rotation.x=Math.sin(t*2.2+i)*0.6; e.position.y=Math.abs(Math.sin(t*2.2+i))*0.08; if(e.position.z>-1 && Math.random()<0.008){ hp-=1; document.getElementById('hp').innerText=hp; if(hp<=0){ playLose(); document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='GAME OVER<br><button onclick="location.reload()">TRY AGAIN</button>'; } } }); renderer.render(scene,camera); }
+animate();
+</script>
+</body>
+</html>
