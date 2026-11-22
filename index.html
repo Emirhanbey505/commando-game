@@ -2,21 +2,21 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMANDO - Joystick Fixed</title>
+<title>COMMANDO - Military Base</title>
 <style>
 body{margin:0;overflow:hidden;background:#000;font-family:Arial;touch-action:none}
-#hud{position:fixed;top:10px;left:10px;color:white;font-size:15px;z-index:10;background:rgba(0,0,0,0.6);padding:10px;border-radius:8px}
+#hud{position:fixed;top:10px;left:10px;color:white;font-size:15px;z-index:10;background:rgba(0,0,0,0.65);padding:10px;border-radius:8px}
 #cross{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:28px;z-index:10;text-shadow:0 0 5px red;pointer-events:none}
 #msg{position:fixed;top:30%;left:0;width:100%;text-align:center;color:yellow;font-size:32px;display:none;z-index:20;background:rgba(0,0,0,0.85);padding:20px}
 button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:none;border-radius:8px}
 #fire{position:fixed;bottom:25px;right:18px;width:85px;height:85px;background:#c0392b;color:white;border-radius:50%;font-size:16px;z-index:20;border:3px solid white}
 #joyBase{position:fixed;bottom:25px;left:18px;width:120px;height:120px;background:rgba(255,255,255,0.2);border-radius:50%;z-index:20;border:2px solid white}
-#joyKnob{position:absolute;top:35px;left:35px;width:50px;height:50px;background:white;border-radius:50%;box-shadow:0 0 10px black}
+#joyKnob{position:absolute;top:35px;left:35px;width:50px;height:50px;background:white;border-radius:50%}
 #joyText{position:absolute;top:5px;left:0;width:100%;text-align:center;color:white;font-size:12px}
 </style>
 </head>
 <body>
-<div id="hud">COMMANDO | MISSION 1<br>Enemies: <span id="left">5</span> | Health: <span id="hp">100</span><br>Joystick = Chalna | Screen = Nishana</div>
+<div id="hud">COMMANDO | MILITARY BASE<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span><br>Base Clear Karo!</div>
 <div id="cross">+</div>
 <div id="msg"></div>
 <div id="joyBase"><div id="joyText">MOVE</div><div id="joyKnob"></div></div>
@@ -26,152 +26,63 @@ button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:no
 <script>
 let scene=new THREE.Scene();
 scene.background=new THREE.Color(0x87ceeb);
-scene.fog=new THREE.Fog(0x87ceeb,20,80);
+scene.fog=new THREE.Fog(0x87ceeb,30,140);
 let camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
-camera.position.set(0,1.7,12);
+camera.position.set(0,1.7,25);
 let renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-let light=new THREE.DirectionalLight(0xffffff,1); light.position.set(10,20,10); scene.add(light);
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
+let light=new THREE.DirectionalLight(0xffffff,1); light.position.set(20,30,20); scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff,0.55));
 
-let ground=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshBasicMaterial({color:0x4a7c3a}));
+// === BARA AREA - 200 x 200 ===
+let ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshBasicMaterial({color:0x4a7c3a}));
 ground.rotation.x=-Math.PI/2; scene.add(ground);
-let road=new THREE.Mesh(new THREE.PlaneGeometry(6,120),new THREE.MeshBasicMaterial({color:0x555555}));
+let road=new THREE.Mesh(new THREE.PlaneGeometry(8,200),new THREE.MeshBasicMaterial({color:0x555555}));
 road.rotation.x=-Math.PI/2; road.position.y=0.01; scene.add(road);
+let road2=new THREE.Mesh(new THREE.PlaneGeometry(200,8),new THREE.MeshBasicMaterial({color:0x555555}));
+road2.rotation.x=-Math.PI/2; road2.position.y=0.01; scene.add(road2);
 
-for(let i=0;i<4;i++){
-  let house=new THREE.Mesh(new THREE.BoxGeometry(8,5,6),new THREE.MeshBasicMaterial({color:0xd9c9a3}));
-  house.position.set(-18+i*12,2.5,-15); scene.add(house);
-  let roof=new THREE.Mesh(new THREE.BoxGeometry(9,1,7),new THREE.MeshBasicMaterial({color:0x8b0000}));
-  roof.position.set(-18+i*12,5.5,-15); scene.add(roof);
-}
-for(let i=0;i<10;i++){
-  let trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3),new THREE.MeshBasicMaterial({color:0x5b3a1a}));
-  trunk.position.set(-25+Math.random()*50,1.5,-10-Math.random()*20); scene.add(trunk);
-  let leaves=new THREE.Mesh(new THREE.SphereGeometry(1.8),new THREE.MeshBasicMaterial({color:0x1e6b2a}));
-  leaves.position.set(trunk.position.x,4,trunk.position.z); scene.add(leaves);
-}
-
-let gunGroup=new THREE.Group();
-let gunBody=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.18,0.9),new THREE.MeshBasicMaterial({color:0x1a1a1a}));
-let barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6),new THREE.MeshBasicMaterial({color:0x222222}));
-barrel.rotation.x=Math.PI/2; barrel.position.set(0,0.05,-0.7);
-let scope=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),new THREE.MeshBasicMaterial({color:0x000000}));
-scope.rotation.x=Math.PI/2; scope.position.set(0,0.15,-0.2);
-let hand=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.18),new THREE.MeshBasicMaterial({color:0xd9a77a}));
-hand.position.set(0,-0.2,-0.3);
-gunGroup.add(gunBody,barrel,scope,hand);
-gunGroup.position.set(0.35,-0.35,-0.8); camera.add(gunGroup); scene.add(camera);
-
-function makeSoldier(x,z){
+// === MILITARY BASE - Barracks / Rooms ===
+function makeBarrack(x,z,color){
   let g=new THREE.Group();
-  let head=new THREE.Mesh(new THREE.SphereGeometry(0.32),new THREE.MeshBasicMaterial({color:0xd9a77a}));
-  head.position.y=1.85; g.add(head);
-  let helmet=new THREE.Mesh(new THREE.SphereGeometry(0.38,8,4,0,Math.PI*2,0,Math.PI/2),new THREE.MeshBasicMaterial({color:0x2f4f2f}));
-  helmet.position.y=1.95; g.add(helmet);
-  let body=new THREE.Mesh(new THREE.BoxGeometry(0.9,1.1,0.5),new THREE.MeshBasicMaterial({color:0x3b5a2a}));
-  body.position.y=1.1; g.add(body);
-  let legL=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.7,0.3),new THREE.MeshBasicMaterial({color:0x222222}));
-  legL.position.set(-0.25,0.35,0); g.add(legL);
-  let legR=legL.clone(); legR.position.x=0.25; g.add(legR);
-  let gunS=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.9),new THREE.MeshBasicMaterial({color:0x000000}));
-  gunS.position.set(0.4,1.2,-0.4); g.add(gunS);
-  g.position.set(x,0,z); scene.add(g); return g;
+  let walls=new THREE.Mesh(new THREE.BoxGeometry(16,6,10),new THREE.MeshBasicMaterial({color:color}));
+  walls.position.y=3; g.add(walls);
+  let roof=new THREE.Mesh(new THREE.BoxGeometry(17,1,11),new THREE.MeshBasicMaterial({color:0x333333}));
+  roof.position.y=6.5; g.add(roof);
+  // Door + Windows - Room jaisa lagega
+  let door=new THREE.Mesh(new THREE.BoxGeometry(2,3.5,0.2),new THREE.MeshBasicMaterial({color:0x2b1d0e}));
+  door.position.set(-3,1.75,5.05); g.add(door);
+  for(let i=0;i<3;i++){
+    let win=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,0.2),new THREE.MeshBasicMaterial({color:0x87ceeb}));
+    win.position.set(2+i*3,3.5,5.05); g.add(win);
+  }
+  let sign=new THREE.Mesh(new THREE.BoxGeometry(4,1,0.2),new THREE.MeshBasicMaterial({color:0xffff00}));
+  sign.position.set(0,5,5.05); g.add(sign);
+  g.position.set(x,0,z); scene.add(g);
+}
+makeBarrack(-25,-25,0xd9c9a3);
+makeBarrack(25,-25,0xc9b896);
+makeBarrack(-25,0,0xb8a888);
+
+// === Watch Tower ===
+for(let x of [-15,15]){
+  let leg1=new THREE.Mesh(new THREE.BoxGeometry(0.5,10,0.5),new THREE.MeshBasicMaterial({color:0x5b3a1a}));
+  leg1.position.set(x,5,-35); scene.add(leg1);
+  let leg2=leg1.clone(); leg2.position.x=x+2; scene.add(leg2);
+  let cabin=new THREE.Mesh(new THREE.BoxGeometry(4,3,4),new THREE.MeshBasicMaterial({color:0x6b4a2a}));
+  cabin.position.set(x+1,11,-35); scene.add(cabin);
+  let tRoof=new THREE.Mesh(new THREE.BoxGeometry(5,0.5,5),new THREE.MeshBasicMaterial({color:0x8b0000}));
+  tRoof.position.set(x+1,12.8,-35); scene.add(tRoof);
 }
 
-let enemies=[]; let left=5; let hp=100; let walkTime=0;
-for(let i=0;i<5;i++){ enemies.push(makeSoldier(-15+i*7,-22-Math.random()*4)); }
-
-// --- AIM FIX - WAPIS NAHI JAYE GA, UPAR NEECHE BHI HOGA ---
-let yaw=0, pitch=0;
-let lookTouchId=null, lastLookX=0, lastLookY=0;
-let joyTouchId=null;
-let joyX=0, joyY=0; // -1 to 1
-
-let joyBase=document.getElementById('joyBase');
-let joyKnob=document.getElementById('joyKnob');
-
-function handleJoy(t){
-  let r=joyBase.getBoundingClientRect();
-  let cx=r.left+r.width/2, cy=r.top+r.height/2;
-  let dx=(t.clientX-cx)/40, dy=(t.clientY-cy)/40;
-  let len=Math.sqrt(dx*dx+dy*dy);
-  if(len>1){ dx/=len; dy/=len; }
-  joyX=dx; joyY=dy;
-  joyKnob.style.left=(35+dx*25)+'px';
-  joyKnob.style.top=(35+dy*25)+'px';
+// === Bunker / Sand Bags ===
+for(let i=0;i<5;i++){
+  let bunker=new THREE.Mesh(new THREE.BoxGeometry(4,1.5,1),new THREE.MeshBasicMaterial({color:0x8a7a5a}));
+  bunker.position.set(-20+i*9,0.75,-10); scene.add(bunker);
 }
-function resetJoy(){ joyX=0; joyY=0; joyKnob.style.left='35px'; joyKnob.style.top='35px'; }
 
-document.addEventListener('touchstart',function(e){
-  for(let t of e.changedTouches){
-    let el=document.elementFromPoint(t.clientX,t.clientY);
-    if(el && (el.id==='fire')) continue;
-    if(el && (el.id==='joyBase' || el.id==='joyKnob' || el.id==='joyText' || joyBase.contains(el))){
-      joyTouchId=t.identifier; handleJoy(t); continue;
-    }
-    if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; }
-  }
-},{passive:false});
-
-document.addEventListener('touchmove',function(e){
-  for(let t of e.changedTouches){
-    if(t.identifier===joyTouchId){ handleJoy(t); e.preventDefault(); continue; }
-    if(t.identifier===lookTouchId){
-      let dx=t.clientX-lastLookX; let dy=t.clientY-lastLookY;
-      yaw -= dx*0.005; pitch -= dy*0.005;
-      if(pitch>0.6) pitch=0.6; if(pitch<-0.6) pitch=-0.6;
-      camera.rotation.order='YXZ'; camera.rotation.y=yaw; camera.rotation.x=pitch;
-      lastLookX=t.clientX; lastLookY=t.clientY; e.preventDefault();
-    }
-  }
-},{passive:false});
-
-document.addEventListener('touchend',function(e){
-  for(let t of e.changedTouches){
-    if(t.identifier===lookTouchId) lookTouchId=null;
-    if(t.identifier===joyTouchId){ joyTouchId=null; resetJoy(); }
-  }
-});
-
-let keys={};
-document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
-document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-
-function shoot(){
-  let ray=new THREE.Raycaster(); ray.setFromCamera({x:0,y:0},camera);
-  let all=[]; enemies.forEach(g=>g.children.forEach(c=>all.push(c)));
-  let hits=ray.intersectObjects(all);
-  if(hits.length>0){
-    let parent=hits[0].object; while(parent.parent!==scene) parent=parent.parent;
-    scene.remove(parent); enemies=enemies.filter(e=>e!==parent);
-    left--; document.getElementById('left').innerText=left;
-    gunGroup.position.z=-0.6; setTimeout(()=>gunGroup.position.z=-0.8,80);
-    if(left===0){ document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='MISSION COMPLETE<br>COMMANDO WINS!<br><br><button onclick="location.reload()">PLAY AGAIN</button>'; }
-  }
-}
-document.getElementById('fire').addEventListener('touchstart',function(e){ e.stopPropagation(); shoot(); });
-
-function animate(){
-  requestAnimationFrame(animate);
-  let dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; dir.normalize();
-  let right=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,1,0));
-  let mx=0, mz=0;
-  if(keys['w']) mz+=1; if(keys['s']) mz-=1; if(keys['a']) mx-=1; if(keys['d']) mx+=1;
-  // Joystick: Upar = Aage, Neeche = Peeche, Dayen/Bayen = Side
-  mx+=joyX; mz+=-joyY;
-  let isWalking=(mx!==0 || mz!==0);
-  if(isWalking){
-    camera.position.addScaledVector(dir,mz*0.12);
-    camera.position.addScaledVector(right,mx*0.12);
-    walkTime+=0.3; camera.position.y=1.7+Math.sin(walkTime)*0.05;
-  }
-  enemies.forEach(e=>{ e.position.z+=0.015; if(e.position.z>-1 && Math.random()<0.008){ hp-=1; document.getElementById('hp').innerText=hp; if(hp<=0){ document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='GAME OVER<br><button onclick="location.reload()">TRY AGAIN</button>'; } } });
-  renderer.render(scene,camera);
-}
-animate();
-</script>
-</body>
-</html>
+// === Flag + HeliPad + Tank ===
+let pole=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,12),new THREE.MeshBasicMaterial({color:0xffffff}));
+pole.position.set(0,6,-30
