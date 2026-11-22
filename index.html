@@ -18,17 +18,24 @@ button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:no
 #soundBtn{position:fixed;top:10px;right:10px;z-index:30;background:#ffcc00;color:black;padding:8px 12px;border-radius:8px;font-size:14px}
 #rotateMsg{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:white;z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
 #loading{position:fixed;top:40%;left:0;width:100%;text-align:center;color:white;font-size:20px;z-index:5}
+.ctl{position:fixed;z-index:20;border-radius:50%;border:2px solid #fff;background:rgba(30,30,30,.72);color:#fff;font-size:11px;padding:0;width:60px;height:60px}
+#jump{bottom:32px;right:128px}#crouch{bottom:128px;right:26px}#gren{bottom:108px;right:106px}#swap{top:58px;right:10px;border-radius:8px;width:auto;height:auto;padding:8px 12px;font-size:13px}
+#start{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.25) 50%,rgba(0,0,0,.7))}
+#start h1{font-size:58px;letter-spacing:10px;margin:0;color:#e8c547;text-shadow:0 4px 18px #000}#start h3{margin:6px 0 22px;letter-spacing:4px;font-weight:400}
+#start button{font-size:26px;padding:14px 50px;background:#c0392b;border:3px solid #fff;letter-spacing:3px}#start p{font-size:12px;opacity:.85;max-width:520px;line-height:1.6}
 </style>
 </head>
 <body>
 <div id="loading">GAME LOADING...<br>Thora wait karein</div>
-<div id="hud">COMMANDO | LEVEL <span id="lvl">1</span>/10<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span><br>Ammo: <span id="ammo">30</span></div>
+<div id="hud">COMMANDO | LEVEL <span id="lvl">1</span>/10<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span><br>Ammo: <span id="ammo">30</span><br><span id="wname">AK-47</span> | Grenade: <span id="gn">3</span></div>
 <div id="cross">+</div>
 <div id="flash"></div>
 <div id="msg"></div>
 <div id="joyBase"><div id="joyText">MOVE</div><div id="joyKnob"></div></div>
 <button id="fire">FIRE</button>
 <button id="soundBtn">SOUND: ON 🔊</button>
+<div id="start"><h1>COMMANDO</h1><h3>WAREHOUSE ASSAULT &middot; 10 LEVELS</h3><button onclick="startGame()">&#9654; PLAY</button><p>MOVE: left joystick &nbsp;|&nbsp; LOOK: drag screen &nbsp;|&nbsp; FIRE: red button (AK-47 hold karein)<br>JUMP &nbsp;&middot;&nbsp; CROUCH (baith kar nishana) &nbsp;&middot;&nbsp; GRENADE &nbsp;&middot;&nbsp; SWAP (AK-47 / PISTOL)</p></div>
+<button class="ctl" id="jump">JUMP</button><button class="ctl" id="crouch">CROUCH</button><button class="ctl" id="gren">GRENADE</button><button class="ctl" id="swap">SWAP GUN</button>
 <div id="rotateMsg"><div style="font-size:60px">🔄</div><h2>Mobile ko Ghumayein</h2><p>Mobile ko Side karke khelein</p></div>
 
 <script>
@@ -68,16 +75,16 @@ function thump(t,f0,f1,dur,vol,out){
   o.connect(g); g.connect(out); o.start(t); o.stop(t+dur);
 }
 /* rifle shot: crack + body + low thump + room echo + brass tick */
-function playGun(dist){
+function playGun(dist,kind){
   if(!soundOn) return; initAudio(); dist=dist||0;
   let t=audioCtx.currentTime, far=Math.min(dist/60,1);
   let bus=audioCtx.createGain(); bus.gain.value=(1-far*0.8)*(dist?0.7:1);
   let lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=dist?(9000-far*7500):12000;
   bus.connect(lp); lp.connect(master); lp.connect(reverb); lp.connect(echo);
-  let v=0.9+Math.random()*0.2;
+  let v=(0.9+Math.random()*0.2)*(kind===1?1.35:1);
   noise(t,0.045,'highpass',2500*v,1.0,bus);            // sharp crack
   noise(t,0.14,'bandpass',1200*v,0.8,bus);             // body
-  noise(t,0.30,'lowpass',500,0.9,bus);                 // boom
+  noise(t,kind===1?0.15:0.30,'lowpass',500,kind===1?0.55:0.9,bus);                 // boom
   thump(t,140*v,38,0.22,1.0,bus);                      // chest thump
   if(dist){ let d=audioCtx.createDelay(); d.delayTime.value=dist/343; }
   if(!dist) setTimeout(()=>{ if(soundOn&&audioCtx) noise(audioCtx.currentTime,0.03,'bandpass',4500,0.25,master); },260+Math.random()*80); // shell casing
@@ -95,6 +102,9 @@ function playBullet(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentT
 function playHurt(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime; thump(t,120,50,0.25,0.7,master); noise(t,0.15,'lowpass',400,0.6,master); }
 function playWin(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; [523,659,784,1046].forEach((f,i)=>{ let o=audioCtx.createOscillator(); o.frequency.value=f; let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t+i*0.2); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.2+0.3); o.connect(g); g.connect(master); o.start(t+i*0.2); o.stop(t+i*0.2+0.3); }); }
 function playLose(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; thump(t,300,60,1,0.4,master); }
+function playBoom(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime; let bus=audioCtx.createGain(); bus.connect(master); bus.connect(reverb); bus.connect(echo); noise(t,1.3,'lowpass',280,1.3,bus); noise(t,0.25,'highpass',1800,0.7,bus); thump(t,95,22,1.0,1.3,bus); }
+function playPin(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime; noise(t,0.03,'bandpass',3200,0.35,master); thump(t+0.12,2400,1800,0.08,0.07,master); }
+function playTink(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime; noise(t,0.04,'bandpass',4200,0.25,master); thump(t,1900,900,0.06,0.06,master); }
 function playStep(dist){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime, v=dist?Math.max(0.05,0.5-dist/50):0.35; noise(t,0.08,'lowpass',500,v,master); noise(t,0.05,'bandpass',2200,v*0.35,master); thump(t,90,50,0.07,v*0.8,master); }
 function playGrunt(){ if(!soundOn) return; initAudio(); let t=audioCtx.currentTime; let o=audioCtx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(70,t+0.4); let f1=audioCtx.createBiquadFilter(); f1.type='bandpass'; f1.frequency.value=700; f1.Q.value=4; let g=audioCtx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.5,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+0.45); o.connect(f1); f1.connect(g); g.connect(master); o.start(t); o.stop(t+0.5); noise(t,0.2,'bandpass',1100,0.15,master); }
 document.getElementById('soundBtn').addEventListener('click',()=>{ soundOn=!soundOn; document.getElementById('soundBtn').innerText=soundOn?'SOUND: ON 🔊':'SOUND: OFF 🔇'; if(soundOn) initAudio(); });
@@ -135,13 +145,64 @@ for(let sx of [-1,1]){ let tx=sx*52, tz=-8; for(let a of [-1,1]) for(let b of [-
 box(126,4,1,0,2,-48,concMat); box(126,4,1,0,2,48,concMat); box(1,4,96,-62,2,0,concMat); box(1,4,96,62,2,0,concMat);
 
 /* player gun */
-let gunGroup=new THREE.Group();
-let gb=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.18,0.9),L(0x1a1a1a));
-let br=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6),L(0x222222)); br.rotation.x=Math.PI/2; br.position.set(0,0.05,-0.7);
-let sc=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),L(0x000000)); sc.rotation.x=Math.PI/2; sc.position.set(0,0.15,-0.2);
-let mag=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.28,0.12),L(0x111111)); mag.position.set(0,-0.2,-0.1);
-let hand=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.18),L(0xd9a77a)); hand.position.set(0,-0.2,-0.4);
-gunGroup.add(gb,br,sc,mag,hand); gunGroup.position.set(0.35,-0.35,-0.8); camera.add(gunGroup); scene.add(camera);
+let cw=0, ammoW=[30,12], started=false, firing=false, crouch=false, jumpY=0, jumpV=0, eyeH=1.7, bob=0, gn=3, gCool=0, shake=0, gl=[], fx=[];
+const metal=new THREE.MeshPhongMaterial({color:0x232628,shininess:70}), steelM=new THREE.MeshPhongMaterial({color:0x3a3d40,shininess:90}), glove=L(0x2b2b2b);
+const akWood=new THREE.MeshLambertMaterial({map:tex(128,128,(x,w,h)=>{ x.fillStyle='#8a4a1e'; x.fillRect(0,0,w,h); for(let i=0;i<90;i++){ x.fillStyle='rgba('+(40+Math.random()*40|0)+',20,5,'+(0.15+Math.random()*0.25)+')'; x.fillRect(0,Math.random()*h,w,1+Math.random()*2); } },1,1)});
+const bake=L(0x2a1810), sleeveM=L(0x4a5a2b);
+function part(g,geo,mat,x,y,z,rx){ let o=new THREE.Mesh(geo,mat); o.position.set(x,y,z); if(rx) o.rotation.x=rx; g.add(o); return o; }
+const GB=(w,h,d)=>new THREE.BoxGeometry(w,h,d), GC=(r,l)=>new THREE.CylinderGeometry(r,r,l,12);
+function makeAK(){ let g=new THREE.Group();
+  part(g,GB(0.07,0.085,0.34),metal,0,0,0); part(g,GB(0.062,0.03,0.3),steelM,0,0.058,0.01);            // receiver + dust cover
+  for(let i=0;i<5;i++) part(g,GB(0.066,0.006,0.012),metal,0,0.075,-0.1+i*0.06);                        // dust cover ribs
+  part(g,GB(0.04,0.032,0.05),metal,0,0.09,0.1);                                                        // rear sight
+  part(g,GC(0.016,0.3),steelM,0,0.066,-0.34,Math.PI/2);                                                // gas tube
+  part(g,GC(0.0135,0.55),steelM,0,0.012,-0.48,Math.PI/2);                                              // barrel
+  part(g,GB(0.066,0.055,0.26),akWood,0,-0.008,-0.3); part(g,GB(0.058,0.03,0.2),akWood,0,0.052,-0.37); // wood handguards
+  part(g,GB(0.03,0.05,0.04),metal,0,0.04,-0.58); part(g,GB(0.009,0.06,0.009),metal,0,0.072,-0.64); part(g,GB(0.026,0.02,0.03),metal,0,0.034,-0.64); // front sight
+  part(g,GC(0.02,0.06),metal,0,0.012,-0.77,Math.PI/2);                                                 // muzzle brake
+  part(g,GB(0.045,0.13,0.075),metal,0,-0.1,0.0,0); part(g,GB(0.045,0.13,0.075),metal,0,-0.215,-0.025,0.22); part(g,GB(0.045,0.13,0.075),metal,0,-0.32,-0.075,0.46); // curved mag
+  part(g,GB(0.05,0.12,0.06),bake,0,-0.105,0.15,-0.28);                                                 // pistol grip
+  part(g,GB(0.01,0.025,0.07),metal,0,-0.062,0.075);                                                    // trigger guard
+  part(g,GB(0.052,0.075,0.12),akWood,0,-0.012,0.3); part(g,GB(0.055,0.1,0.26),akWood,0,-0.02,0.47,0.06); part(g,GB(0.058,0.115,0.02),metal,0,-0.01,0.61); // stock
+  part(g,GB(0.03,0.018,0.04),steelM,0.048,0.02,0.01);                                                  // charging handle
+  part(g,GB(0.075,0.07,0.11),glove,-0.012,-0.065,-0.3); part(g,GB(0.085,0.085,0.3),sleeveM,-0.13,-0.14,-0.12,0.35).rotation.y=0.35; // left hand + sleeve
+  part(g,GB(0.07,0.085,0.085),glove,0,-0.15,0.16); part(g,GB(0.09,0.09,0.34),sleeveM,0.09,-0.26,0.36,-0.5).rotation.y=-0.2;             // right hand + sleeve
+  return g; }
+function makePistol(){ let g=new THREE.Group();
+  part(g,GB(0.045,0.05,0.22),steelM,0,0.035,-0.07); part(g,GB(0.04,0.035,0.2),metal,0,-0.003,-0.06); part(g,GC(0.011,0.04),metal,0,0.035,-0.19,Math.PI/2);
+  for(let i=0;i<4;i++) part(g,GB(0.048,0.04,0.004),metal,0,0.035,0.02+i*0.012);                          // slide serrations
+  part(g,GB(0.008,0.014,0.012),metal,0,0.066,-0.17); part(g,GB(0.022,0.012,0.014),metal,0,0.066,0.03);
+  part(g,GB(0.044,0.115,0.06),bake,0,-0.075,0.04,-0.2); part(g,GB(0.008,0.02,0.05),metal,0,-0.035,-0.03);
+  part(g,GB(0.075,0.09,0.09),glove,0,-0.09,0.045); part(g,GB(0.09,0.09,0.34),sleeveM,0.06,-0.2,0.28,-0.45).rotation.y=-0.15;
+  part(g,GB(0.07,0.06,0.07),glove,-0.04,-0.075,0.0); part(g,GB(0.08,0.08,0.3),sleeveM,-0.14,-0.15,0.18,-0.3).rotation.y=0.35;
+  return g; }
+let gunGroup=new THREE.Group(); camera.add(gunGroup); scene.add(camera); gunGroup.visible=false;
+const WP=[{n:'AK-47',mag:30,gap:105,auto:true,rec:0.013,spread:0.02,build:makeAK,x:0.27,y:-0.27,z:-0.68},{n:'PISTOL',mag:12,gap:230,auto:false,rec:0.022,spread:0.006,build:makePistol,x:0.2,y:-0.2,z:-0.5}];
+const W=()=>WP[cw];
+function buildGun(){ while(gunGroup.children.length) gunGroup.remove(gunGroup.children[0]); gunGroup.add(W().build()); gunGroup.position.set(W().x,W().y,W().z); gunGroup.rotation.set(0,0.04,0); document.getElementById('wname').innerText=W().n; }
+buildGun();
+function setGn(){ document.getElementById('gn').innerText=gn; }
+function swapGun(){ if(reloading||over||!started) return; ammoW[cw]=ammo; cw=(cw+1)%2; ammo=ammoW[cw]; buildGun(); setAmmo(); }
+function doJump(){ if(started&&!over&&jumpY===0&&!crouch){ jumpV=5.4; } }
+function toggleCrouch(){ crouch=!crouch; document.getElementById('crouch').innerText=crouch?'STAND':'CROUCH'; }
+function startGame(){ started=true; document.getElementById('start').style.display='none'; initAudio(); camera.rotation.set(0,0,0); yaw=0; pitch=0; gunGroup.visible=true; hp=100; lvl=1; startLevel(); }
+const blastLight=new THREE.PointLight(0xffaa44,0,30); scene.add(blastLight);
+function dmg(e,n){ let u=e.userData; u.hp-=n; if(u.hp<=0&&!u.dead){ u.dead=true; playGrunt(); left--; document.getElementById('left').innerText=left; if(left===0&&!over) levelDone(); } }
+function throwGrenade(){ if(over||!started||gn<=0||gCool>0) return; gn--; gCool=0.8; setGn(); initAudio(); playPin();
+  let m=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),L(0x2d3b22)); m.scale.y=1.25; m.castShadow=true; scene.add(m);
+  let d=new THREE.Vector3(); camera.getWorldDirection(d); m.position.copy(camera.position).addScaledVector(d,0.6); m.position.y-=0.15;
+  gl.push({m,v:d.clone().multiplyScalar(15).add(new THREE.Vector3(0,4.5,0)),t:2.2}); }
+function updateGren(dt){ for(let i=gl.length-1;i>=0;i--){ let g=gl[i]; g.t-=dt; g.v.y-=14*dt; let p=g.m.position, ox=p.x, oz=p.z; p.addScaledVector(g.v,dt);
+  if(p.y<0.08){ p.y=0.08; if(Math.abs(g.v.y)>1.2) playTink(); g.v.y*=-0.35; g.v.x*=0.7; g.v.z*=0.7; }
+  for(const b of cols){ if(p.x>b.x0-0.1&&p.x<b.x1+0.1&&p.z>b.z0-0.1&&p.z<b.z1+0.1&&p.y<3){ p.x=ox; p.z=oz; g.v.x*=-0.4; g.v.z*=-0.4; break; } }
+  g.m.rotation.x+=dt*8; if(g.t<=0){ explode(p.clone()); scene.remove(g.m); gl.splice(i,1); } } }
+function explode(p){ playBoom(); shake=0.7; let fm=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),new THREE.MeshBasicMaterial({color:0xff9a30,transparent:true,opacity:0.9})); fm.position.copy(p); scene.add(fm); blastLight.position.copy(p); blastLight.intensity=6; fx.push({fm,t:0});
+  enemies.forEach(e=>{ if(e.userData.dead) return; let d=Math.hypot(e.position.x-p.x,e.position.z-p.z); if(d<9) dmg(e,d<4?9:3); });
+  let dp=Math.hypot(camera.position.x-p.x,camera.position.z-p.z); if(dp<8&&!over) hurt(Math.round(45*(1-dp/8))+5); }
+function updateFx(dt){ for(let i=fx.length-1;i>=0;i--){ let f=fx[i]; f.t+=dt; f.fm.scale.setScalar(1+f.t*9); f.fm.material.opacity=Math.max(0,0.9-f.t*2.2); blastLight.intensity=Math.max(0,6-f.t*14); if(f.t>0.5){ scene.remove(f.fm); blastLight.intensity=0; fx.splice(i,1); } } }
+function bind(id,fn){ let el=document.getElementById(id); el.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); initAudio(); fn(); },{passive:false}); el.addEventListener('click',fn); }
+bind('jump',doJump); bind('crouch',toggleCrouch); bind('gren',throwGrenade); bind('swap',swapGun);
+
 
 /* ================= REALISTIC SOLDIER ================= */
 function camoTex(base,cols){
@@ -199,7 +260,7 @@ const LV=n=>({count:Math.min(4+n,12),spd:1.1+n*0.12,hit:Math.min(0.2+n*0.045,0.6
 function resolve(pos,r){ for(const b of cols){ if(pos.x>b.x0-r&&pos.x<b.x1+r&&pos.z>b.z0-r&&pos.z<b.z1+r){ let dl=pos.x-(b.x0-r),dr=(b.x1+r)-pos.x,dt_=pos.z-(b.z0-r),dd=(b.z1+r)-pos.z,m=Math.min(dl,dr,dt_,dd); if(m===dl) pos.x=b.x0-r; else if(m===dr) pos.x=b.x1+r; else if(m===dt_) pos.z=b.z0-r; else pos.z=b.z1+r; } } }
 function spawn(c){ let x,z; for(let k=0;k<40;k++){ if(Math.random()<0.6){ x=-55+Math.random()*110; z=-45+Math.random()*9; } else { x=(Math.random()<0.5?-1:1)*(54+Math.random()*5); z=-32+Math.random()*34; } let ok=true; for(const b of cols) if(x>b.x0-1.2&&x<b.x1+1.2&&z>b.z0-1.2&&z<b.z1+1.2){ ok=false; break; } if(ok) break; }
   let e=makeSoldier(x,z); e.userData.hp=c.hp; e.userData.spd=c.spd*(0.9+Math.random()*0.2); return e; }
-function startLevel(){ document.getElementById('msg').style.display='none'; enemies.forEach(e=>scene.remove(e)); enemies=[]; cur=LV(lvl); left=cur.count; for(let i=0;i<cur.count;i++) enemies.push(spawn(cur)); over=false; ammo=30; reloading=false; camera.position.set(0,1.7,28); hp=Math.min(100,hp+(lvl>1?35:0)); document.getElementById('hp').innerText=hp; document.getElementById('left').innerText=left; document.getElementById('lvl').innerText=lvl; setAmmo(); }
+function startLevel(){ document.getElementById('msg').style.display='none'; enemies.forEach(e=>scene.remove(e)); enemies=[]; cur=LV(lvl); left=cur.count; for(let i=0;i<cur.count;i++) enemies.push(spawn(cur)); over=false; ammoW=[30,12]; ammo=ammoW[cw]; gn=3; setGn(); reloading=false; camera.position.set(0,1.7,28); hp=Math.min(100,hp+(lvl>1?35:0)); document.getElementById('hp').innerText=hp; document.getElementById('left').innerText=left; document.getElementById('lvl').innerText=lvl; setAmmo(); }
 function levelDone(){ over=true; playWin(); let m=document.getElementById('msg'); m.style.display='block'; m.innerHTML=lvl>=10?'MISSION COMPLETE!<br>Sab 10 level jeet liye!<br><br><button onclick="location.reload()">PLAY AGAIN</button>':'LEVEL '+lvl+' CLEAR!<br><br><button onclick="lvl++;startLevel()">NEXT LEVEL '+(lvl+1)+'</button>'; }
 function retry(){ hp=100; startLevel(); }
 startLevel();
@@ -209,25 +270,25 @@ let yaw=0,pitch=0,lookTouchId=null,lastLookX=0,lastLookY=0,joyTouchId=null,joyX=
 let joyBase=document.getElementById('joyBase'), joyKnob=document.getElementById('joyKnob');
 function handleJoy(t){ let r=joyBase.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2; let dx=(t.clientX-cx)/40,dy=(t.clientY-cy)/40,len=Math.hypot(dx,dy); if(len>1){dx/=len;dy/=len;} joyX=dx; joyY=dy; joyKnob.style.left=(37+dx*25)+'px'; joyKnob.style.top=(37+dy*25)+'px'; }
 function resetJoy(){ joyX=0; joyY=0; joyKnob.style.left='37px'; joyKnob.style.top='37px'; }
-document.addEventListener('touchstart',function(e){ for(let t of e.changedTouches){ let el=document.elementFromPoint(t.clientX,t.clientY); if(el&&(el.id==='fire'||el.id==='soundBtn')) continue; if(el&&(joyBase.contains(el)||el===joyBase)){ joyTouchId=t.identifier; handleJoy(t); continue; } if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; } } },{passive:false});
+document.addEventListener('touchstart',function(e){ for(let t of e.changedTouches){ let el=document.elementFromPoint(t.clientX,t.clientY); if(el&&(el.id==='fire'||el.id==='soundBtn'||el.classList.contains('ctl'))) continue; if(el&&(joyBase.contains(el)||el===joyBase)){ joyTouchId=t.identifier; handleJoy(t); continue; } if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; } } },{passive:false});
 document.addEventListener('touchmove',function(e){ for(let t of e.changedTouches){ if(t.identifier===joyTouchId){ handleJoy(t); e.preventDefault(); continue; } if(t.identifier===lookTouchId){ yaw-=(t.clientX-lastLookX)*0.005; pitch-=(t.clientY-lastLookY)*0.005; pitch=Math.max(-0.6,Math.min(0.6,pitch)); camera.rotation.y=yaw; camera.rotation.x=pitch; lastLookX=t.clientX; lastLookY=t.clientY; e.preventDefault(); } } },{passive:false});
 document.addEventListener('touchend',function(e){ for(let t of e.changedTouches){ if(t.identifier===lookTouchId) lookTouchId=null; if(t.identifier===joyTouchId){ joyTouchId=null; resetJoy(); } } });
-let keys={}; document.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.code==='Space') shoot(); if(e.key==='r') reload(); }); document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+let keys={}; document.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.code==='Space') doJump(); if(e.key==='f') shoot(); if(e.key==='g') throwGrenade(); if(e.key==='c') toggleCrouch(); if(e.key==='q') swapGun(); if(e.key==='r') reload(); }); document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
 /* ================= GAMEPLAY ================= */
 const ray=new THREE.Raycaster(), flashEl=document.getElementById('flash');
 function setAmmo(){ document.getElementById('ammo').innerText=reloading?'RELOAD...':ammo; }
-function reload(){ if(reloading||ammo===30||over) return; reloading=true; setAmmo(); playReload(); setTimeout(()=>{ ammo=30; reloading=false; setAmmo(); },1500); }
+function reload(){ if(reloading||ammo===W().mag||over) return; reloading=true; setAmmo(); playReload(); setTimeout(()=>{ ammo=W().mag; reloading=false; setAmmo(); },1500); }
 function hurt(n){ hp=Math.max(0,hp-n); document.getElementById('hp').innerText=hp; playHurt(); flashEl.style.opacity=0.45; setTimeout(()=>flashEl.style.opacity=0,200); if(hp<=0&&!over){ over=true; playLose(); let m=document.getElementById('msg'); m.style.display='block'; m.innerHTML='GAME OVER<br><button onclick="retry()">TRY AGAIN</button>'; } }
 let lastShot=0;
 function shoot(){
-  if(over||reloading) return; let now=performance.now(); if(now-lastShot<110) return; lastShot=now;
+  if(over||reloading) return; let now=performance.now(); if(!started||now-lastShot<W().gap) return; lastShot=now;
   if(ammo<=0){ reload(); return; }
-  ammo--; setAmmo(); playGun(0);
+  ammo--; setAmmo(); playGun(0,cw);
   muzzleLight.intensity=3; setTimeout(()=>muzzleLight.intensity=0,50);
-  gunGroup.position.z=-0.7; gunGroup.rotation.x=0.08; setTimeout(()=>{gunGroup.position.z=-0.8; gunGroup.rotation.x=0;},70);
-  pitch+=0.01; camera.rotation.x=pitch; // recoil
-  ray.setFromCamera({x:0,y:0},camera);
+  gunGroup.position.z=W().z+0.09; gunGroup.rotation.x=0.07; setTimeout(()=>{gunGroup.position.z=W().z; gunGroup.rotation.x=0;},70);
+  pitch+=W().rec; camera.rotation.x=pitch; // recoil
+  let sp=W().spread*(crouch?0.6:1)*(jumpY>0.1?2.5:1); ray.setFromCamera({x:(Math.random()-0.5)*sp,y:(Math.random()-0.5)*sp},camera);
   let all=[]; enemies.forEach(e=>{ if(!e.userData.dead) e.traverse(c=>{ if(c.isMesh) all.push(c); }); });
   let hits=ray.intersectObjects(all);
   let cb=ray.intersectObjects(blk); if(cb.length&&(!hits.length||cb[0].distance<hits[0].distance)){ playRicochet(); hits.length=0; }
@@ -238,16 +299,20 @@ function shoot(){
   }
   if(ammo===0) setTimeout(reload,300);
 }
-document.getElementById('fire').addEventListener('touchstart',function(e){ e.stopPropagation(); initAudio(); shoot(); });
+document.getElementById('fire').addEventListener('touchstart',function(e){ e.preventDefault(); e.stopPropagation(); initAudio(); firing=true; shoot(); },{passive:false});
+document.getElementById('fire').addEventListener('touchend',function(){ firing=false; }); document.getElementById('fire').addEventListener('touchcancel',function(){ firing=false; });
 document.getElementById('fire').addEventListener('click',function(){ initAudio(); shoot(); });
 let clock=new THREE.Clock();
 function animate(){
   requestAnimationFrame(animate); let dt=Math.min(clock.getDelta(),0.05), t=performance.now()*0.004;
+  if(!started){ let a=performance.now()*0.00008; camera.position.set(Math.sin(a)*48,13,Math.cos(a)*42+10); camera.lookAt(0,3,-5); renderer.render(scene,camera); return; }
+  gCool=Math.max(0,gCool-dt); updateGren(dt); updateFx(dt); if(firing&&W().auto) shoot(); if(shake>0){ camera.rotation.z=(Math.random()-0.5)*shake*0.1; shake=Math.max(0,shake-dt*1.5); } else camera.rotation.z=0;
   if(!over){
     let dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; dir.normalize(); let right=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,1,0));
     let mx=joyX, mz=-joyY; if(keys['w']) mz+=1; if(keys['s']) mz-=1; if(keys['a']) mx-=1; if(keys['d']) mx+=1;
-    if(mx||mz){ camera.position.addScaledVector(dir,mz*0.15); camera.position.addScaledVector(right,mx*0.15); walkTime+=0.3; stepCheck(); camera.position.y=1.7+Math.sin(walkTime)*0.05; }
+    if(mx||mz){ let sm=crouch?0.5:1; camera.position.addScaledVector(dir,mz*0.15*sm); camera.position.addScaledVector(right,mx*0.15*sm); walkTime+=0.3; stepCheck(); bob=Math.sin(walkTime)*0.05; }
     camera.position.x=Math.max(-60,Math.min(60,camera.position.x)); camera.position.z=Math.max(-45,Math.min(45,camera.position.z)); resolve(camera.position,0.5);
+    eyeH+=((crouch?1.0:1.7)-eyeH)*Math.min(1,dt*10); if(jumpV!==0||jumpY>0){ jumpV-=20*dt; jumpY+=jumpV*dt; if(jumpY<=0){ jumpY=0; jumpV=0; } } camera.position.y=eyeH+jumpY+((mx||mz)&&jumpY===0?bob:0);
   }
   enemies.forEach((e,i)=>{
     let u=e.userData;
@@ -269,7 +334,7 @@ function animate(){
     e.position.y=Math.abs(Math.cos(p))*0.05*k;
     u.flashT-=dt; u.flashM.visible=u.flashT>0;
     let si=Math.floor(p/Math.PI); if(si!==u.stepI){ u.stepI=si; if(k>0.5) playStep(dist); }
-    if(!moving&&!over){ u.nextShot-=dt; if(u.nextShot<=0){ u.nextShot=cur.rate*(0.6+Math.random()*0.8); u.kick=1; u.flashT=0.06; playGun(dist); if(Math.random()<cur.hit) setTimeout(()=>{ if(!over) hurt(Math.round(cur.dmg*(0.7+Math.random()*0.6))); },80); else setTimeout(playBullet,60); } }
+    if(!moving&&!over){ u.nextShot-=dt; if(u.nextShot<=0){ u.nextShot=cur.rate*(0.6+Math.random()*0.8); u.kick=1; u.flashT=0.06; playGun(dist); if(Math.random()<cur.hit*(crouch?0.7:1)*(jumpY>0.3?0.6:1)) setTimeout(()=>{ if(!over) hurt(Math.round(cur.dmg*(0.7+Math.random()*0.6))); },80); else setTimeout(playBullet,60); } }
   });
   renderer.render(scene,camera);
 }
