@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMANDO - With Sound</title>
+<title>COMMANDO - Mountains + Real Sound</title>
 <style>
 body{margin:0;overflow:hidden;background:#000;font-family:Arial;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;color:white;font-size:15px;z-index:10;background:rgba(0,0,0,0.65);padding:10px;border-radius:8px}
@@ -18,171 +18,91 @@ button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:no
 </style>
 </head>
 <body>
-<div id="hud">COMMANDO | MILITARY BASE<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span></div>
+<div id="hud">COMMANDO | MOUNTAIN BASE<br>Enemies: <span id="left">6</span> | Health: <span id="hp">100</span></div>
 <div id="cross">+</div>
 <div id="msg"></div>
 <div id="joyBase"><div id="joyText">MOVE</div><div id="joyKnob"></div></div>
 <button id="fire">FIRE</button>
 <button id="soundBtn">SOUND: ON 🔊</button>
-
 <div id="startOverlay">
   <h1 style="font-size:42px;color:#ffcc00;margin:0">COMMANDO</h1>
-  <p style="font-size:18px">MILITARY BASE MISSION</p>
+  <p>MOUNTAIN MILITARY BASE</p>
   <p>6 Dushman - Base Clear Karo!</p>
   <button id="startBtn" style="font-size:22px;padding:15px 35px;background:#c0392b">▶ START MISSION</button>
-  <p style="font-size:13px;margin-top:15px">Start dabate hi Awaz shuru ho jayegi</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// === SOUND SYSTEM - Web Audio, Koi File Nahi Chahiye ===
+// === REAL GUN SOUND - Asli File ===
 let audioCtx=null; let soundOn=true;
+let gunAudio=new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_2c8c1b4b8d.mp3');
+gunAudio.volume=1.0;
+let hitAudio=new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_2a8a3b5b0f.mp3');
 function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }
 function playGun(){
-  if(!soundOn||!audioCtx) return;
-  let t=audioCtx.currentTime;
-  let buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*0.2,audioCtx.sampleRate);
+  if(!soundOn) return;
+  // Pehle asli file chalao, agar na chale to computer wali awaz
+  try{ gunAudio.currentTime=0; gunAudio.play().catch(()=>playGunSynth()); }catch(e){ playGunSynth(); }
+}
+function playGunSynth(){
+  if(!audioCtx) return; let t=audioCtx.currentTime;
+  // Real Gun = Tez Crack + Neeche Dhum - Dance wali awaz nahi
+  let buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*0.35,audioCtx.sampleRate);
   let d=buffer.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
+  for(let i=0;i<d.length;i++){ let p=i/d.length; d[i]=(Math.random()*2-1)*Math.pow(1-p,2.5); if(i<200) d[i]*=3; }
   let src=audioCtx.createBufferSource(); src.buffer=buffer;
-  let filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=800;
-  let gain=audioCtx.createGain(); gain.gain.setValueAtTime(0.8,t); gain.gain.exponentialRampToValueAtTime(0.01,t+0.2);
+  let filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.setValueAtTime(3000,t); filter.frequency.exponentialRampToValueAtTime(200,t+0.3);
+  let gain=audioCtx.createGain(); gain.gain.setValueAtTime(1.0,t); gain.gain.exponentialRampToValueAtTime(0.01,t+0.35);
   src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); src.start();
-  let osc=audioCtx.createOscillator(); osc.frequency.setValueAtTime(150,t); osc.frequency.exponentialRampToValueAtTime(40,t+0.15);
-  let g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.6,t); g2.gain.exponentialRampToValueAtTime(0.01,t+0.15);
-  osc.connect(g2); g2.connect(audioCtx.destination); osc.start(); osc.stop(t+0.15);
+  let osc=audioCtx.createOscillator(); osc.frequency.setValueAtTime(100,t); osc.frequency.exponentialRampToValueAtTime(35,t+0.25);
+  let g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.9,t); g2.gain.exponentialRampToValueAtTime(0.01,t+0.25);
+  osc.connect(g2); g2.connect(audioCtx.destination); osc.start(); osc.stop(t+0.25);
 }
-function playHit(){ // Dushman marne ki awaz
-  if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime;
-  let osc=audioCtx.createOscillator(); osc.type='sawtooth';
-  osc.frequency.setValueAtTime(300,t); osc.frequency.exponentialRampToValueAtTime(50,t+0.4);
-  let g=audioCtx.createGain(); g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.4);
-  osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+0.4);
-}
-function playStart(){ // Mission Start Siren
-  if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime;
-  for(let i=0;i<2;i++){
-    let osc=audioCtx.createOscillator(); osc.type='square';
-    osc.frequency.setValueAtTime(440,t+i*0.4); osc.frequency.setValueAtTime(880,t+i*0.4+0.2);
-    let g=audioCtx.createGain(); g.gain.setValueAtTime(0.25,t+i*0.4); g.gain.setValueAtTime(0.25,t+i*0.4+0.3); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.4+0.35);
-    osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.4); osc.stop(t+i*0.4+0.35);
-  }
-}
-function playWin(){
-  if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime;
-  [523,659,784,1046].forEach((f,i)=>{
-    let osc=audioCtx.createOscillator(); osc.frequency.value=f;
-    let g=audioCtx.createGain(); g.gain.setValueAtTime(0.4,t+i*0.2); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.2+0.3);
-    osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.2); osc.stop(t+i*0.2+0.3);
-  });
-}
-function playLose(){
-  if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime;
-  let osc=audioCtx.createOscillator(); osc.type='sawtooth';
-  osc.frequency.setValueAtTime(400,t); osc.frequency.exponentialRampToValueAtTime(80,t+1);
-  let g=audioCtx.createGain(); g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.01,t+1);
-  osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+1);
-}
-document.getElementById('soundBtn').addEventListener('click',()=>{
-  soundOn=!soundOn; document.getElementById('soundBtn').innerText=soundOn?'SOUND: ON 🔊':'SOUND: OFF 🔇';
-  if(soundOn) initAudio();
-});
-document.getElementById('startBtn').addEventListener('click',()=>{
-  initAudio(); playStart();
-  document.getElementById('startOverlay').style.display='none';
-});
+function playHit(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; let osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.setValueAtTime(200,t); osc.frequency.exponentialRampToValueAtTime(40,t+0.5); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.5); osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); }
+function playStart(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; for(let i=0;i<2;i++){ let osc=audioCtx.createOscillator(); osc.type='square'; osc.frequency.setValueAtTime(440,t+i*0.4); osc.frequency.setValueAtTime(880,t+i*0.4+0.2); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.2,t+i*0.4); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.4+0.35); osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.4); osc.stop(t+i*0.4+0.35); } }
+function playWin(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; [523,659,784,1046].forEach((f,i)=>{ let osc=audioCtx.createOscillator(); osc.frequency.value=f; let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t+i*0.2); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.2+0.3); osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.2); osc.stop(t+i*0.2+0.3); }); }
+function playLose(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; let osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.setValueAtTime(300,t); osc.frequency.exponentialRampToValueAtTime(60,t+1); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.01,t+1); osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+1); }
 
-// === GAME ===
-let scene=new THREE.Scene(); scene.background=new THREE.Color(0x87ceeb); scene.fog=new THREE.Fog(0x87ceeb,30,140);
+document.getElementById('soundBtn').addEventListener('click',()=>{ soundOn=!soundOn; document.getElementById('soundBtn').innerText=soundOn?'SOUND: ON 🔊':'SOUND: OFF 🔇'; if(soundOn) initAudio(); });
+document.getElementById('startBtn').addEventListener('click',()=>{ initAudio(); playStart(); document.getElementById('startOverlay').style.display='none'; });
+
+let scene=new THREE.Scene(); scene.background=new THREE.Color(0x87ceeb); scene.fog=new THREE.Fog(0x87ceeb,40,160);
 let camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000); camera.position.set(0,1.7,25);
 let renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(window.innerWidth,window.innerHeight); document.body.appendChild(renderer.domElement);
-let light=new THREE.DirectionalLight(0xffffff,1); light.position.set(20,30,20); scene.add(light); scene.add(new THREE.AmbientLight(0xffffff,0.55));
+let light=new THREE.DirectionalLight(0xffffff,1); light.position.set(20,30,20); scene.add(light); scene.add(new THREE.AmbientLight(0xffffff,0.6));
 let ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshBasicMaterial({color:0x4a7c3a})); ground.rotation.x=-Math.PI/2; scene.add(ground);
 let road=new THREE.Mesh(new THREE.PlaneGeometry(8,200),new THREE.MeshBasicMaterial({color:0x555555})); road.rotation.x=-Math.PI/2; road.position.y=0.01; scene.add(road);
-let road2=new THREE.Mesh(new THREE.PlaneGeometry(200,8),new THREE.MeshBasicMaterial({color:0x555555})); road2.rotation.x=-Math.PI/2; road2.position.y=0.01; scene.add(road2);
-function makeBarrack(x,z,color){
-  let g=new THREE.Group(); let walls=new THREE.Mesh(new THREE.BoxGeometry(16,6,10),new THREE.MeshBasicMaterial({color:color})); walls.position.y=3; g.add(walls);
-  let roof=new THREE.Mesh(new THREE.BoxGeometry(17,1,11),new THREE.MeshBasicMaterial({color:0x333333})); roof.position.y=6.5; g.add(roof);
-  let door=new THREE.Mesh(new THREE.BoxGeometry(2,3.5,0.2),new THREE.MeshBasicMaterial({color:0x2b1d0e})); door.position.set(-3,1.75,5.05); g.add(door);
-  for(let i=0;i<3;i++){ let win=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,0.2),new THREE.MeshBasicMaterial({color:0x87ceeb})); win.position.set(2+i*3,3.5,5.05); g.add(win); }
-  g.position.set(x,0,z); scene.add(g);
+
+// === PAHAR - Charon Taraf Bade Pahar ===
+for(let i=0;i<18;i++){
+  let angle=(i/18)*Math.PI*2; let dist=85+Math.random()*20;
+  let h=25+Math.random()*25; let r=20+Math.random()*15;
+  let mountain=new THREE.Mesh(new THREE.ConeGeometry(r,h,6),new THREE.MeshBasicMaterial({color:0x6b7a6b}));
+  mountain.position.set(Math.cos(angle)*dist,h/2-1,Math.sin(angle)*dist); scene.add(mountain);
+  let snow=new THREE.Mesh(new THREE.ConeGeometry(r*0.35,h*0.35,6),new THREE.MeshBasicMaterial({color:0xffffff}));
+  snow.position.set(Math.cos(angle)*dist,h-2,Math.sin(angle)*dist); scene.add(snow);
 }
+// Door ke chote pahar
+for(let i=0;i<10;i++){ let m=new THREE.Mesh(new THREE.ConeGeometry(15,18,5),new THREE.MeshBasicMaterial({color:0x5a6a5a})); m.position.set(-70+Math.random()*140,9,-70+Math.random()*20); scene.add(m); }
+
+function makeBarrack(x,z,color){ let g=new THREE.Group(); let walls=new THREE.Mesh(new THREE.BoxGeometry(16,6,10),new THREE.MeshBasicMaterial({color:color})); walls.position.y=3; g.add(walls); let roof=new THREE.Mesh(new THREE.BoxGeometry(17,1,11),new THREE.MeshBasicMaterial({color:0x333333})); roof.position.y=6.5; g.add(roof); let door=new THREE.Mesh(new THREE.BoxGeometry(2,3.5,0.2),new THREE.MeshBasicMaterial({color:0x2b1d0e})); door.position.set(-3,1.75,5.05); g.add(door); for(let i=0;i<3;i++){ let win=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,0.2),new THREE.MeshBasicMaterial({color:0x87ceeb})); win.position.set(2+i*3,3.5,5.05); g.add(win); } g.position.set(x,0,z); scene.add(g); }
 makeBarrack(-25,-25,0xd9c9a3); makeBarrack(25,-25,0xc9b896); makeBarrack(-25,0,0xb8a888);
-for(let x of [-15,15]){ let leg1=new THREE.Mesh(new THREE.BoxGeometry(0.5,10,0.5),new THREE.MeshBasicMaterial({color:0x5b3a1a})); leg1.position.set(x,5,-35); scene.add(leg1); let leg2=leg1.clone(); leg2.position.x=x+2; scene.add(leg2); let cabin=new THREE.Mesh(new THREE.BoxGeometry(4,3,4),new THREE.MeshBasicMaterial({color:0x6b4a2a})); cabin.position.set(x+1,11,-35); scene.add(cabin); let tRoof=new THREE.Mesh(new THREE.BoxGeometry(5,0.5,5),new THREE.MeshBasicMaterial({color:0x8b0000})); tRoof.position.set(x+1,12.8,-35); scene.add(tRoof); }
-for(let i=0;i<5;i++){ let bunker=new THREE.Mesh(new THREE.BoxGeometry(4,1.5,1),new THREE.MeshBasicMaterial({color:0x8a7a5a})); bunker.position.set(-20+i*9,0.75,-10); scene.add(bunker); }
+for(let x of [-15,15]){ let leg1=new THREE.Mesh(new THREE.BoxGeometry(0.5,10,0.5),new THREE.MeshBasicMaterial({color:0x5b3a1a})); leg1.position.set(x,5,-35); scene.add(leg1); let leg2=leg1.clone(); leg2.position.x=x+2; scene.add(leg2); let cabin=new THREE.Mesh(new THREE.BoxGeometry(4,3,4),new THREE.MeshBasicMaterial({color:0x6b4a2a})); cabin.position.set(x+1,11,-35); scene.add(cabin); }
 let pole=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,12),new THREE.MeshBasicMaterial({color:0xffffff})); pole.position.set(0,6,-30); scene.add(pole);
 let flag=new THREE.Mesh(new THREE.PlaneGeometry(4,2),new THREE.MeshBasicMaterial({color:0x006600,side:THREE.DoubleSide})); flag.position.set(2,11,-30); scene.add(flag);
 let heli=new THREE.Mesh(new THREE.CylinderGeometry(5,5,0.2),new THREE.MeshBasicMaterial({color:0x333333})); heli.position.set(28,0.1,15); scene.add(heli);
 let tankBody=new THREE.Mesh(new THREE.BoxGeometry(5,2,3),new THREE.MeshBasicMaterial({color:0x2f4f2f})); tankBody.position.set(-28,1,15); scene.add(tankBody);
-let tankTop=new THREE.Mesh(new THREE.BoxGeometry(2.5,1,2),new THREE.MeshBasicMaterial({color:0x2f4f2f})); tankTop.position.set(-28,2.5,15); scene.add(tankTop);
 for(let i=0;i<20;i++){ let trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3),new THREE.MeshBasicMaterial({color:0x5b3a1a})); trunk.position.set(-50+Math.random()*100,1.5,-40+Math.random()*60); scene.add(trunk); let leaves=new THREE.Mesh(new THREE.SphereGeometry(2),new THREE.MeshBasicMaterial({color:0x1e6b2a})); leaves.position.set(trunk.position.x,4,trunk.position.z); scene.add(leaves); }
 
-let gunGroup=new THREE.Group();
-let gunBody=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.18,0.9),new THREE.MeshBasicMaterial({color:0x1a1a1a}));
-let barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6),new THREE.MeshBasicMaterial({color:0x222222})); barrel.rotation.x=Math.PI/2; barrel.position.set(0,0.05,-0.7);
-let scope=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),new THREE.MeshBasicMaterial({color:0x000000})); scope.rotation.x=Math.PI/2; scope.position.set(0,0.15,-0.2);
-let hand=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.18),new THREE.MeshBasicMaterial({color:0xd9a77a})); hand.position.set(0,-0.2,-0.3);
-gunGroup.add(gunBody,barrel,scope,hand); gunGroup.position.set(0.35,-0.35,-0.8); camera.add(gunGroup); scene.add(camera);
+let gunGroup=new THREE.Group(); let gunBody=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.18,0.9),new THREE.MeshBasicMaterial({color:0x1a1a1a})); let barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6),new THREE.MeshBasicMaterial({color:0x222222})); barrel.rotation.x=Math.PI/2; barrel.position.set(0,0.05,-0.7); let scope=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),new THREE.MeshBasicMaterial({color:0x000000})); scope.rotation.x=Math.PI/2; scope.position.set(0,0.15,-0.2); let hand=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.18),new THREE.MeshBasicMaterial({color:0xd9a77a})); hand.position.set(0,-0.2,-0.3); gunGroup.add(gunBody,barrel,scope,hand); gunGroup.position.set(0.35,-0.35,-0.8); camera.add(gunGroup); scene.add(camera);
 
+// === REAL SOLDIER - BARA CHEHRA, BARI AANKHEN, FOJI WARDI ===
 function makeSoldier(x,z){
   let g=new THREE.Group();
-  let head=new THREE.Mesh(new THREE.SphereGeometry(0.42),new THREE.MeshBasicMaterial({color:0xe8b88a})); head.position.y=2.0; g.add(head);
-  let helmet=new THREE.Mesh(new THREE.SphereGeometry(0.48,10,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshBasicMaterial({color:0x2f4f2f})); helmet.position.y=2.12; g.add(helmet);
+  // BARA SAR
+  let head=new THREE.Mesh(new THREE.SphereGeometry(0.55),new THREE.MeshBasicMaterial({color:0xe8b88a})); head.position.y=2.15; g.add(head);
+  let helmet=new THREE.Mesh(new THREE.SphereGeometry(0.58,10,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshBasicMaterial({color:0x2f4f2f})); helmet.position.y=2.28; g.add(helmet);
+  // BARI AANKHEN - Ab door se bhi nazar ayengi
   for(let s of [-1,1]){
-    let eyeWhite=new THREE.Mesh(new THREE.SphereGeometry(0.07),new THREE.MeshBasicMaterial({color:0xffffff})); eyeWhite.position.set(s*0.15,2.05,0.38); g.add(eyeWhite);
-    let pupil=new THREE.Mesh(new THREE.SphereGeometry(0.035),new THREE.MeshBasicMaterial({color:0x000000})); pupil.position.set(s*0.15,2.05,0.43); g.add(pupil);
-    let brow=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.04,0.02),new THREE.MeshBasicMaterial({color:0x000000})); brow.position.set(s*0.15,2.22,0.40); g.add(brow);
-  }
-  let nose=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.12,0.06),new THREE.MeshBasicMaterial({color:0xd9a77a})); nose.position.set(0,1.92,0.42); g.add(nose);
-  let mouth=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.05,0.02),new THREE.MeshBasicMaterial({color:0x8b0000})); mouth.position.set(0,1.78,0.41); g.add(mouth);
-  for(let s of [-1,1]){ let ear=new THREE.Mesh(new THREE.SphereGeometry(0.08),new THREE.MeshBasicMaterial({color:0xe8b88a})); ear.position.set(s*0.42,2.0,0); g.add(ear); }
-  let body=new THREE.Mesh(new THREE.BoxGeometry(1.0,1.2,0.5),new THREE.MeshBasicMaterial({color:0x3b5a2a})); body.position.y=1.15; g.add(body);
-  let vest=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.7,0.15),new THREE.MeshBasicMaterial({color:0x222222})); vest.position.set(0,1.2,0.28); g.add(vest);
-  let armL=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.9,0.25),new THREE.MeshBasicMaterial({color:0x3b5a2a})); armL.position.set(-0.65,1.2,0); g.add(armL);
-  let armR=armL.clone(); armR.position.x=0.65; g.add(armR); g.userData.armL=armL; g.userData.armR=armR;
-  let legL=new THREE.Mesh(new THREE.BoxGeometry(0.32,0.8,0.32),new THREE.MeshBasicMaterial({color:0x2a2a2a})); legL.position.set(-0.28,0.4,0); g.add(legL);
-  let legR=legL.clone(); legR.position.x=0.28; g.add(legR); g.userData.legL=legL; g.userData.legR=legR;
-  let gunS=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,1.0),new THREE.MeshBasicMaterial({color:0x000000})); gunS.position.set(0.4,1.2,-0.4); g.add(gunS);
-  g.position.set(x,0,z); scene.add(g); return g;
-}
-let enemies=[]; let left=6; let hp=100; let walkTime=0;
-for(let i=0;i<6;i++){ enemies.push(makeSoldier(-20+i*8,-30-Math.random()*5)); }
-
-let yaw=0, pitch=0, lookTouchId=null, lastLookX=0, lastLookY=0, joyTouchId=null, joyX=0, joyY=0;
-let joyBase=document.getElementById('joyBase'), joyKnob=document.getElementById('joyKnob');
-function handleJoy(t){ let r=joyBase.getBoundingClientRect(); let cx=r.left+r.width/2, cy=r.top+r.height/2; let dx=(t.clientX-cx)/40, dy=(t.clientY-cy)/40; let len=Math.sqrt(dx*dx+dy*dy); if(len>1){ dx/=len; dy/=len; } joyX=dx; joyY=dy; joyKnob.style.left=(35+dx*25)+'px'; joyKnob.style.top=(35+dy*25)+'px'; }
-function resetJoy(){ joyX=0; joyY=0; joyKnob.style.left='35px'; joyKnob.style.top='35px'; }
-document.addEventListener('touchstart',function(e){
-  for(let t of e.changedTouches){ let el=document.elementFromPoint(t.clientX,t.clientY); if(el && (el.id==='fire'||el.id==='soundBtn'||el.id==='startBtn')) continue; if(el && (el.id==='joyBase'||el.id==='joyKnob'||el.id==='joyText'||joyBase.contains(el))){ joyTouchId=t.identifier; handleJoy(t); continue; } if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; } }
-},{passive:false});
-document.addEventListener('touchmove',function(e){
-  for(let t of e.changedTouches){ if(t.identifier===joyTouchId){ handleJoy(t); e.preventDefault(); continue; } if(t.identifier===lookTouchId){ let dx=t.clientX-lastLookX, dy=t.clientY-lastLookY; yaw-=dx*0.005; pitch-=dy*0.005; if(pitch>0.6) pitch=0.6; if(pitch<-0.6) pitch=-0.6; camera.rotation.order='YXZ'; camera.rotation.y=yaw; camera.rotation.x=pitch; lastLookX=t.clientX; lastLookY=t.clientY; e.preventDefault(); } }
-},{passive:false});
-document.addEventListener('touchend',function(e){ for(let t of e.changedTouches){ if(t.identifier===lookTouchId) lookTouchId=null; if(t.identifier===joyTouchId){ joyTouchId=null; resetJoy(); } } });
-let keys={}; document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true); document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-
-function shoot(){
-  playGun();
-  let ray=new THREE.Raycaster(); ray.setFromCamera({x:0,y:0},camera);
-  let all=[]; enemies.forEach(g=>g.children.forEach(c=>all.push(c))); let hits=ray.intersectObjects(all);
-  if(hits.length>0){
-    playHit();
-    let parent=hits[0].object; while(parent.parent!==scene) parent=parent.parent; scene.remove(parent); enemies=enemies.filter(e=>e!==parent);
-    left--; document.getElementById('left').innerText=left; gunGroup.position.z=-0.6; setTimeout(()=>gunGroup.position.z=-0.8,80);
-    if(left===0){ playWin(); document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='BASE CLEAR!<br>COMMANDO WINS!<br><br><button onclick="location.reload()">PLAY AGAIN</button>'; }
-  }
-}
-document.getElementById('fire').addEventListener('touchstart',function(e){ e.stopPropagation(); initAudio(); shoot(); });
-
-function animate(){
-  requestAnimationFrame(animate);
-  let dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; dir.normalize(); let right=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,1,0));
-  let mx=0, mz=0; if(keys['w']) mz+=1; if(keys['s']) mz-=1; if(keys['a']) mx-=1; if(keys['d']) mx+=1; mx+=joyX; mz+=-joyY;
-  let isWalking=(mx!==0||mz!==0); if(isWalking){ camera.position.addScaledVector(dir,mz*0.15); camera.position.addScaledVector(right,mx*0.15); walkTime+=0.3; camera.position.y=1.7+Math.sin(walkTime)*0.05; }
-  let t=Date.now()*0.005; enemies.forEach((e,i)=>{ e.position.z+=0.02; e.rotation.y=Math.sin(t+i)*0.1; e.userData.legL.rotation.x=Math.sin(t*2+i)*0.6; e.userData.legR.rotation.x=Math.sin(t*2+i+Math.PI)*0.6; e.userData.armL.rotation.x=Math.sin(t*2+i+Math.PI)*0.4; e.userData.armR.rotation.x=Math.sin(t*2+i)*0.4; e.position.y=Math.abs(Math.sin(t*2+i))*0.05; if(e.position.z>-1 && Math.random()<0.008){ hp-=1; document.getElementById('hp').innerText=hp; if(hp<=0){ playLose(); document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='GAME OVER<br><button onclick="location.reload()">TRY AGAIN</button>'; } } });
-  renderer.render(scene,camera);
-}
-animate();
-</script>
-</body>
-</html>
+    let eyeWhite=new THREE.Mesh(new THREE.SphereGeometry(0.13),new THREE.MeshBasicMaterial({color:0xffffff})); eyeWhite.position.set(s*0.20,2.22,0.48); g.add(eyeWhite);
+    let pupil=new THREE.Mesh(new THREE.SphereGeometry(0.07),new THREE.MeshBasicMaterial({color:0x000000})); pupil.position.set(s*0.20,2.
