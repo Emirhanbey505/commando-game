@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>COMMANDO - Mountains + Real Sound</title>
+<title>COMMANDO - Start Fixed</title>
 <style>
 body{margin:0;overflow:hidden;background:#000;font-family:Arial;touch-action:none}
 #hud{position:fixed;top:10px;left:10px;color:white;font-size:15px;z-index:10;background:rgba(0,0,0,0.65);padding:10px;border-radius:8px}
@@ -14,7 +14,8 @@ button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:no
 #joyKnob{position:absolute;top:35px;left:35px;width:50px;height:50px;background:white;border-radius:50%}
 #joyText{position:absolute;top:5px;left:0;width:100%;text-align:center;color:white;font-size:12px}
 #soundBtn{position:fixed;top:10px;right:10px;z-index:30;background:#ffcc00;color:black;padding:8px 12px;border-radius:8px;font-size:14px}
-#startOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center}
+#startOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center}
+#startBtn{font-size:26px;padding:18px 40px;background:#c0392b;color:white;border:3px solid white;border-radius:12px;touch-action:auto}
 </style>
 </head>
 <body>
@@ -28,43 +29,38 @@ button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:no
   <h1 style="font-size:42px;color:#ffcc00;margin:0">COMMANDO</h1>
   <p>MOUNTAIN MILITARY BASE</p>
   <p>6 Dushman - Base Clear Karo!</p>
-  <button id="startBtn" style="font-size:22px;padding:15px 35px;background:#c0392b">▶ START MISSION</button>
+  <button id="startBtn">▶ START MISSION</button>
+  <p style="font-size:13px;margin-top:15px">Is button ko dabayein</p>
+  <p id="debugText" style="color:#aaa;font-size:12px"></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// === REAL GUN SOUND - Asli File ===
+// === SOUND ===
 let audioCtx=null; let soundOn=true;
 let gunAudio=new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_2c8c1b4b8d.mp3');
-gunAudio.volume=1.0;
-let hitAudio=new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_2a8a3b5b0f.mp3');
 function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }
-function playGun(){
-  if(!soundOn) return;
-  // Pehle asli file chalao, agar na chale to computer wali awaz
-  try{ gunAudio.currentTime=0; gunAudio.play().catch(()=>playGunSynth()); }catch(e){ playGunSynth(); }
-}
-function playGunSynth(){
-  if(!audioCtx) return; let t=audioCtx.currentTime;
-  // Real Gun = Tez Crack + Neeche Dhum - Dance wali awaz nahi
-  let buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*0.35,audioCtx.sampleRate);
-  let d=buffer.getChannelData(0);
-  for(let i=0;i<d.length;i++){ let p=i/d.length; d[i]=(Math.random()*2-1)*Math.pow(1-p,2.5); if(i<200) d[i]*=3; }
-  let src=audioCtx.createBufferSource(); src.buffer=buffer;
-  let filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.setValueAtTime(3000,t); filter.frequency.exponentialRampToValueAtTime(200,t+0.3);
-  let gain=audioCtx.createGain(); gain.gain.setValueAtTime(1.0,t); gain.gain.exponentialRampToValueAtTime(0.01,t+0.35);
-  src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); src.start();
-  let osc=audioCtx.createOscillator(); osc.frequency.setValueAtTime(100,t); osc.frequency.exponentialRampToValueAtTime(35,t+0.25);
-  let g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.9,t); g2.gain.exponentialRampToValueAtTime(0.01,t+0.25);
-  osc.connect(g2); g2.connect(audioCtx.destination); osc.start(); osc.stop(t+0.25);
-}
+function playGun(){ if(!soundOn) return; try{ gunAudio.currentTime=0; gunAudio.play().catch(()=>playGunSynth()); }catch(e){ playGunSynth(); } }
+function playGunSynth(){ if(!audioCtx) return; let t=audioCtx.currentTime; let buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*0.35,audioCtx.sampleRate); let d=buffer.getChannelData(0); for(let i=0;i<d.length;i++){ let p=i/d.length; d[i]=(Math.random()*2-1)*Math.pow(1-p,2.5); if(i<200) d[i]*=3; } let src=audioCtx.createBufferSource(); src.buffer=buffer; let filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.setValueAtTime(3000,t); filter.frequency.exponentialRampToValueAtTime(200,t+0.3); let gain=audioCtx.createGain(); gain.gain.setValueAtTime(1.0,t); gain.gain.exponentialRampToValueAtTime(0.01,t+0.35); src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); src.start(); let osc=audioCtx.createOscillator(); osc.frequency.setValueAtTime(100,t); osc.frequency.exponentialRampToValueAtTime(35,t+0.25); let g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.9,t); g2.gain.exponentialRampToValueAtTime(0.01,t+0.25); osc.connect(g2); g2.connect(audioCtx.destination); osc.start(); osc.stop(t+0.25); }
 function playHit(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; let osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.setValueAtTime(200,t); osc.frequency.exponentialRampToValueAtTime(40,t+0.5); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.5); osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); }
 function playStart(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; for(let i=0;i<2;i++){ let osc=audioCtx.createOscillator(); osc.type='square'; osc.frequency.setValueAtTime(440,t+i*0.4); osc.frequency.setValueAtTime(880,t+i*0.4+0.2); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.2,t+i*0.4); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.4+0.35); osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.4); osc.stop(t+i*0.4+0.35); } }
 function playWin(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; [523,659,784,1046].forEach((f,i)=>{ let osc=audioCtx.createOscillator(); osc.frequency.value=f; let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t+i*0.2); g.gain.exponentialRampToValueAtTime(0.01,t+i*0.2+0.3); osc.connect(g); g.connect(audioCtx.destination); osc.start(t+i*0.2); osc.stop(t+i*0.2+0.3); }); }
 function playLose(){ if(!soundOn||!audioCtx) return; let t=audioCtx.currentTime; let osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.setValueAtTime(300,t); osc.frequency.exponentialRampToValueAtTime(60,t+1); let g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.01,t+1); osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(t+1); }
 
+// === START BUTTON FIX - Touch + Click Dono ===
+let gameStarted=false;
+function startGame(){
+  if(gameStarted) return; gameStarted=true;
+  initAudio(); playStart();
+  document.getElementById('startOverlay').style.display='none';
+  document.getElementById('debugText').innerText='';
+}
+let startBtn=document.getElementById('startBtn');
+startBtn.addEventListener('touchstart',function(e){ e.preventDefault(); e.stopPropagation(); startGame(); },{passive:false});
+startBtn.addEventListener('click',function(e){ e.preventDefault(); startGame(); });
+startBtn.addEventListener('touchend',function(e){ e.preventDefault(); startGame(); });
+
 document.getElementById('soundBtn').addEventListener('click',()=>{ soundOn=!soundOn; document.getElementById('soundBtn').innerText=soundOn?'SOUND: ON 🔊':'SOUND: OFF 🔇'; if(soundOn) initAudio(); });
-document.getElementById('startBtn').addEventListener('click',()=>{ initAudio(); playStart(); document.getElementById('startOverlay').style.display='none'; });
 
 let scene=new THREE.Scene(); scene.background=new THREE.Color(0x87ceeb); scene.fog=new THREE.Fog(0x87ceeb,40,160);
 let camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000); camera.position.set(0,1.7,25);
@@ -72,19 +68,7 @@ let renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(window.
 let light=new THREE.DirectionalLight(0xffffff,1); light.position.set(20,30,20); scene.add(light); scene.add(new THREE.AmbientLight(0xffffff,0.6));
 let ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshBasicMaterial({color:0x4a7c3a})); ground.rotation.x=-Math.PI/2; scene.add(ground);
 let road=new THREE.Mesh(new THREE.PlaneGeometry(8,200),new THREE.MeshBasicMaterial({color:0x555555})); road.rotation.x=-Math.PI/2; road.position.y=0.01; scene.add(road);
-
-// === PAHAR - Charon Taraf Bade Pahar ===
-for(let i=0;i<18;i++){
-  let angle=(i/18)*Math.PI*2; let dist=85+Math.random()*20;
-  let h=25+Math.random()*25; let r=20+Math.random()*15;
-  let mountain=new THREE.Mesh(new THREE.ConeGeometry(r,h,6),new THREE.MeshBasicMaterial({color:0x6b7a6b}));
-  mountain.position.set(Math.cos(angle)*dist,h/2-1,Math.sin(angle)*dist); scene.add(mountain);
-  let snow=new THREE.Mesh(new THREE.ConeGeometry(r*0.35,h*0.35,6),new THREE.MeshBasicMaterial({color:0xffffff}));
-  snow.position.set(Math.cos(angle)*dist,h-2,Math.sin(angle)*dist); scene.add(snow);
-}
-// Door ke chote pahar
-for(let i=0;i<10;i++){ let m=new THREE.Mesh(new THREE.ConeGeometry(15,18,5),new THREE.MeshBasicMaterial({color:0x5a6a5a})); m.position.set(-70+Math.random()*140,9,-70+Math.random()*20); scene.add(m); }
-
+for(let i=0;i<18;i++){ let angle=(i/18)*Math.PI*2; let dist=85+Math.random()*20; let h=25+Math.random()*25; let r=20+Math.random()*15; let mountain=new THREE.Mesh(new THREE.ConeGeometry(r,h,6),new THREE.MeshBasicMaterial({color:0x6b7a6b})); mountain.position.set(Math.cos(angle)*dist,h/2-1,Math.sin(angle)*dist); scene.add(mountain); let snow=new THREE.Mesh(new THREE.ConeGeometry(r*0.35,h*0.35,6),new THREE.MeshBasicMaterial({color:0xffffff})); snow.position.set(Math.cos(angle)*dist,h-2,Math.sin(angle)*dist); scene.add(snow); }
 function makeBarrack(x,z,color){ let g=new THREE.Group(); let walls=new THREE.Mesh(new THREE.BoxGeometry(16,6,10),new THREE.MeshBasicMaterial({color:color})); walls.position.y=3; g.add(walls); let roof=new THREE.Mesh(new THREE.BoxGeometry(17,1,11),new THREE.MeshBasicMaterial({color:0x333333})); roof.position.y=6.5; g.add(roof); let door=new THREE.Mesh(new THREE.BoxGeometry(2,3.5,0.2),new THREE.MeshBasicMaterial({color:0x2b1d0e})); door.position.set(-3,1.75,5.05); g.add(door); for(let i=0;i<3;i++){ let win=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,0.2),new THREE.MeshBasicMaterial({color:0x87ceeb})); win.position.set(2+i*3,3.5,5.05); g.add(win); } g.position.set(x,0,z); scene.add(g); }
 makeBarrack(-25,-25,0xd9c9a3); makeBarrack(25,-25,0xc9b896); makeBarrack(-25,0,0xb8a888);
 for(let x of [-15,15]){ let leg1=new THREE.Mesh(new THREE.BoxGeometry(0.5,10,0.5),new THREE.MeshBasicMaterial({color:0x5b3a1a})); leg1.position.set(x,5,-35); scene.add(leg1); let leg2=leg1.clone(); leg2.position.x=x+2; scene.add(leg2); let cabin=new THREE.Mesh(new THREE.BoxGeometry(4,3,4),new THREE.MeshBasicMaterial({color:0x6b4a2a})); cabin.position.set(x+1,11,-35); scene.add(cabin); }
@@ -93,16 +77,30 @@ let flag=new THREE.Mesh(new THREE.PlaneGeometry(4,2),new THREE.MeshBasicMaterial
 let heli=new THREE.Mesh(new THREE.CylinderGeometry(5,5,0.2),new THREE.MeshBasicMaterial({color:0x333333})); heli.position.set(28,0.1,15); scene.add(heli);
 let tankBody=new THREE.Mesh(new THREE.BoxGeometry(5,2,3),new THREE.MeshBasicMaterial({color:0x2f4f2f})); tankBody.position.set(-28,1,15); scene.add(tankBody);
 for(let i=0;i<20;i++){ let trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3),new THREE.MeshBasicMaterial({color:0x5b3a1a})); trunk.position.set(-50+Math.random()*100,1.5,-40+Math.random()*60); scene.add(trunk); let leaves=new THREE.Mesh(new THREE.SphereGeometry(2),new THREE.MeshBasicMaterial({color:0x1e6b2a})); leaves.position.set(trunk.position.x,4,trunk.position.z); scene.add(leaves); }
-
 let gunGroup=new THREE.Group(); let gunBody=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.18,0.9),new THREE.MeshBasicMaterial({color:0x1a1a1a})); let barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6),new THREE.MeshBasicMaterial({color:0x222222})); barrel.rotation.x=Math.PI/2; barrel.position.set(0,0.05,-0.7); let scope=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),new THREE.MeshBasicMaterial({color:0x000000})); scope.rotation.x=Math.PI/2; scope.position.set(0,0.15,-0.2); let hand=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,0.18),new THREE.MeshBasicMaterial({color:0xd9a77a})); hand.position.set(0,-0.2,-0.3); gunGroup.add(gunBody,barrel,scope,hand); gunGroup.position.set(0.35,-0.35,-0.8); camera.add(gunGroup); scene.add(camera);
-
-// === REAL SOLDIER - BARA CHEHRA, BARI AANKHEN, FOJI WARDI ===
 function makeSoldier(x,z){
   let g=new THREE.Group();
-  // BARA SAR
   let head=new THREE.Mesh(new THREE.SphereGeometry(0.55),new THREE.MeshBasicMaterial({color:0xe8b88a})); head.position.y=2.15; g.add(head);
   let helmet=new THREE.Mesh(new THREE.SphereGeometry(0.58,10,6,0,Math.PI*2,0,Math.PI/2),new THREE.MeshBasicMaterial({color:0x2f4f2f})); helmet.position.y=2.28; g.add(helmet);
-  // BARI AANKHEN - Ab door se bhi nazar ayengi
-  for(let s of [-1,1]){
-    let eyeWhite=new THREE.Mesh(new THREE.SphereGeometry(0.13),new THREE.MeshBasicMaterial({color:0xffffff})); eyeWhite.position.set(s*0.20,2.22,0.48); g.add(eyeWhite);
-    let pupil=new THREE.Mesh(new THREE.SphereGeometry(0.07),new THREE.MeshBasicMaterial({color:0x000000})); pupil.position.set(s*0.20,2.
+  for(let s of [-1,1]){ let eyeWhite=new THREE.Mesh(new THREE.SphereGeometry(0.13),new THREE.MeshBasicMaterial({color:0xffffff})); eyeWhite.position.set(s*0.20,2.22,0.48); g.add(eyeWhite); let pupil=new THREE.Mesh(new THREE.SphereGeometry(0.07),new THREE.MeshBasicMaterial({color:0x000000})); pupil.position.set(s*0.20,2.22,0.58); g.add(pupil); let brow=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.06,0.03),new THREE.MeshBasicMaterial({color:0x1a1a1a})); brow.position.set(s*0.20,2.45,0.50); g.add(brow); }
+  let nose=new THREE.Mesh(new THREE.BoxGeometry(0.10,0.22,0.12),new THREE.MeshBasicMaterial({color:0xd9a77a})); nose.position.set(0,2.02,0.55); g.add(nose);
+  let mouth=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.08,0.03),new THREE.MeshBasicMaterial({color:0x8b0000})); mouth.position.set(0,1.82,0.53); g.add(mouth);
+  let mooch=new THREE.Mesh(new THREE.BoxGeometry(0.30,0.05,0.02),new THREE.MeshBasicMaterial({color:0x000000})); mooch.position.set(0,1.95,0.53); g.add(mooch);
+  for(let s of [-1,1]){ let ear=new THREE.Mesh(new THREE.SphereGeometry(0.12),new THREE.MeshBasicMaterial({color:0xe8b88a})); ear.position.set(s*0.55,2.15,0); g.add(ear); }
+  let body=new THREE.Mesh(new THREE.BoxGeometry(1.15,1.3,0.6),new THREE.MeshBasicMaterial({color:0x4a5d23})); body.position.y=1.15; g.add(body);
+  for(let i=0;i<4;i++){ let spot=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.25,0.02),new THREE.MeshBasicMaterial({color:0x2f4f2f})); spot.position.set(-0.3+Math.random()*0.6,0.9+Math.random()*0.6,0.31); g.add(spot); }
+  let belt=new THREE.Mesh(new THREE.BoxGeometry(1.17,0.15,0.62),new THREE.MeshBasicMaterial({color:0x1a1a1a})); belt.position.set(0,0.55,0); g.add(belt);
+  let vest=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.8,0.15),new THREE.MeshBasicMaterial({color:0x222222})); vest.position.set(0,1.25,0.33); g.add(vest);
+  for(let s of [-1,1]){ let pocket=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.28,0.05),new THREE.MeshBasicMaterial({color:0x3b5a2a})); pocket.position.set(s*0.28,0.85,0.32); g.add(pocket); }
+  let armL=new THREE.Mesh(new THREE.BoxGeometry(0.28,1.0,0.28),new THREE.MeshBasicMaterial({color:0x4a5d23})); armL.position.set(-0.72,1.15,0); g.add(armL);
+  let armR=armL.clone(); armR.position.x=0.72; g.add(armR); g.userData.armL=armL; g.userData.armR=armR;
+  let legL=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.85,0.36),new THREE.MeshBasicMaterial({color:0x3a3a3a})); legL.position.set(-0.30,0.45,0); g.add(legL);
+  let legR=legL.clone(); legR.position.x=0.30; g.add(legR); g.userData.legL=legL; g.userData.legR=legR;
+  let bootL=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.18,0.55),new THREE.MeshBasicMaterial({color:0x000000})); bootL.position.set(-0.30,0.09,0.08); g.add(bootL);
+  let bootR=bootL.clone(); bootR.position.x=0.30; g.add(bootR);
+  let gunS=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,1.1),new THREE.MeshBasicMaterial({color:0x000000})); gunS.position.set(0.45,1.25,-0.4); g.add(gunS);
+  g.position.set(x,0,z); scene.add(g); return g;
+}
+let enemies=[]; let left=6; let hp=100; let walkTime=0;
+for(let i=0;i<6;i++){ enemies.push(makeSoldier(-20+i*8,-30-Math.random()*5)); }
+let yaw=0, pitch=0, lookTouchId=null, lastLookX=0
