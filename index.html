@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMANDO - Real War</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>COMMANDO - Joystick Fixed</title>
 <style>
-body{margin:0;overflow:hidden;background:#000;font-family:Arial}
-#hud{position:fixed;top:10px;left:10px;color:white;font-size:16px;z-index:10;background:rgba(0,0,0,0.6);padding:10px;border-radius:8px}
-#cross{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:28px;z-index:10;text-shadow:0 0 5px red}
-#msg{position:fixed;top:30%;left:0;width:100%;text-align:center;color:yellow;font-size:34px;display:none;z-index:20;background:rgba(0,0,0,0.8);padding:20px}
+body{margin:0;overflow:hidden;background:#000;font-family:Arial;touch-action:none}
+#hud{position:fixed;top:10px;left:10px;color:white;font-size:15px;z-index:10;background:rgba(0,0,0,0.6);padding:10px;border-radius:8px}
+#cross{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:28px;z-index:10;text-shadow:0 0 5px red;pointer-events:none}
+#msg{position:fixed;top:30%;left:0;width:100%;text-align:center;color:yellow;font-size:32px;display:none;z-index:20;background:rgba(0,0,0,0.85);padding:20px}
 button{padding:12px 25px;font-size:18px;background:#1e7e34;color:white;border:none;border-radius:8px}
-#fire{position:fixed;bottom:25px;right:18px;width:85px;height:85px;background:#c0392b;color:white;border-radius:50%;font-size:16px;z-index:15;border:3px solid white}
-#joy{position:fixed;bottom:25px;left:18px;width:105px;height:105px;background:rgba(255,255,255,0.25);border-radius:50%;z-index:15;text-align:center;line-height:105px;color:white;border:2px solid white}
-#look{position:fixed;bottom:140px;right:18px;width:65px;height:65px;background:rgba(255,255,255,0.25);border-radius:50%;z-index:15;text-align:center;line-height:65px;color:white}
+#fire{position:fixed;bottom:25px;right:18px;width:85px;height:85px;background:#c0392b;color:white;border-radius:50%;font-size:16px;z-index:20;border:3px solid white}
+#joyBase{position:fixed;bottom:25px;left:18px;width:120px;height:120px;background:rgba(255,255,255,0.2);border-radius:50%;z-index:20;border:2px solid white}
+#joyKnob{position:absolute;top:35px;left:35px;width:50px;height:50px;background:white;border-radius:50%;box-shadow:0 0 10px black}
+#joyText{position:absolute;top:5px;left:0;width:100%;text-align:center;color:white;font-size:12px}
 </style>
 </head>
 <body>
-<div id="hud">COMMANDO | MISSION 1<br>Enemies: <span id="left">5</span> | Health: <span id="hp">100</span><br>Use JOYSTICK to Walk</div>
+<div id="hud">COMMANDO | MISSION 1<br>Enemies: <span id="left">5</span> | Health: <span id="hp">100</span><br>Joystick = Chalna | Screen = Nishana</div>
 <div id="cross">+</div>
 <div id="msg"></div>
-<div id="joy">WALK</div>
-<div id="look">LOOK</div>
+<div id="joyBase"><div id="joyText">MOVE</div><div id="joyKnob"></div></div>
 <button id="fire">FIRE</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -31,27 +31,22 @@ let camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0
 camera.position.set(0,1.7,12);
 let renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
-renderer.shadowMap.enabled=true;
 document.body.appendChild(renderer.domElement);
 
-// Light - Real Sun
 let light=new THREE.DirectionalLight(0xffffff,1); light.position.set(10,20,10); scene.add(light);
 scene.add(new THREE.AmbientLight(0xffffff,0.5));
 
-// Ground - Road + Grass
 let ground=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshBasicMaterial({color:0x4a7c3a}));
 ground.rotation.x=-Math.PI/2; scene.add(ground);
 let road=new THREE.Mesh(new THREE.PlaneGeometry(6,120),new THREE.MeshBasicMaterial({color:0x555555}));
 road.rotation.x=-Math.PI/2; road.position.y=0.01; scene.add(road);
 
-// Houses - Real Area
 for(let i=0;i<4;i++){
   let house=new THREE.Mesh(new THREE.BoxGeometry(8,5,6),new THREE.MeshBasicMaterial({color:0xd9c9a3}));
   house.position.set(-18+i*12,2.5,-15); scene.add(house);
   let roof=new THREE.Mesh(new THREE.BoxGeometry(9,1,7),new THREE.MeshBasicMaterial({color:0x8b0000}));
   roof.position.set(-18+i*12,5.5,-15); scene.add(roof);
 }
-// Trees
 for(let i=0;i<10;i++){
   let trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3),new THREE.MeshBasicMaterial({color:0x5b3a1a}));
   trunk.position.set(-25+Math.random()*50,1.5,-10-Math.random()*20); scene.add(trunk);
@@ -59,7 +54,6 @@ for(let i=0;i<10;i++){
   leaves.position.set(trunk.position.x,4,trunk.position.z); scene.add(leaves);
 }
 
-// Real Gun - With Body + Barrel + Scope
 let gunGroup=new THREE.Group();
 let gunBody=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.18,0.9),new THREE.MeshBasicMaterial({color:0x1a1a1a}));
 let barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.6),new THREE.MeshBasicMaterial({color:0x222222}));
@@ -71,7 +65,6 @@ hand.position.set(0,-0.2,-0.3);
 gunGroup.add(gunBody,barrel,scope,hand);
 gunGroup.position.set(0.35,-0.35,-0.8); camera.add(gunGroup); scene.add(camera);
 
-// Real Soldier Maker
 function makeSoldier(x,z){
   let g=new THREE.Group();
   let head=new THREE.Mesh(new THREE.SphereGeometry(0.32),new THREE.MeshBasicMaterial({color:0xd9a77a}));
@@ -91,17 +84,61 @@ function makeSoldier(x,z){
 let enemies=[]; let left=5; let hp=100; let walkTime=0;
 for(let i=0;i<5;i++){ enemies.push(makeSoldier(-15+i*7,-22-Math.random()*4)); }
 
+// --- AIM FIX - WAPIS NAHI JAYE GA, UPAR NEECHE BHI HOGA ---
+let yaw=0, pitch=0;
+let lookTouchId=null, lastLookX=0, lastLookY=0;
+let joyTouchId=null;
+let joyX=0, joyY=0; // -1 to 1
+
+let joyBase=document.getElementById('joyBase');
+let joyKnob=document.getElementById('joyKnob');
+
+function handleJoy(t){
+  let r=joyBase.getBoundingClientRect();
+  let cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let dx=(t.clientX-cx)/40, dy=(t.clientY-cy)/40;
+  let len=Math.sqrt(dx*dx+dy*dy);
+  if(len>1){ dx/=len; dy/=len; }
+  joyX=dx; joyY=dy;
+  joyKnob.style.left=(35+dx*25)+'px';
+  joyKnob.style.top=(35+dy*25)+'px';
+}
+function resetJoy(){ joyX=0; joyY=0; joyKnob.style.left='35px'; joyKnob.style.top='35px'; }
+
+document.addEventListener('touchstart',function(e){
+  for(let t of e.changedTouches){
+    let el=document.elementFromPoint(t.clientX,t.clientY);
+    if(el && (el.id==='fire')) continue;
+    if(el && (el.id==='joyBase' || el.id==='joyKnob' || el.id==='joyText' || joyBase.contains(el))){
+      joyTouchId=t.identifier; handleJoy(t); continue;
+    }
+    if(lookTouchId===null){ lookTouchId=t.identifier; lastLookX=t.clientX; lastLookY=t.clientY; }
+  }
+},{passive:false});
+
+document.addEventListener('touchmove',function(e){
+  for(let t of e.changedTouches){
+    if(t.identifier===joyTouchId){ handleJoy(t); e.preventDefault(); continue; }
+    if(t.identifier===lookTouchId){
+      let dx=t.clientX-lastLookX; let dy=t.clientY-lastLookY;
+      yaw -= dx*0.005; pitch -= dy*0.005;
+      if(pitch>0.6) pitch=0.6; if(pitch<-0.6) pitch=-0.6;
+      camera.rotation.order='YXZ'; camera.rotation.y=yaw; camera.rotation.x=pitch;
+      lastLookX=t.clientX; lastLookY=t.clientY; e.preventDefault();
+    }
+  }
+},{passive:false});
+
+document.addEventListener('touchend',function(e){
+  for(let t of e.changedTouches){
+    if(t.identifier===lookTouchId) lookTouchId=null;
+    if(t.identifier===joyTouchId){ joyTouchId=null; resetJoy(); }
+  }
+});
+
 let keys={};
 document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-let moving=false;
-document.getElementById('joy').addEventListener('touchstart',()=>moving=true);
-document.getElementById('joy').addEventListener('touchend',()=>moving=false);
-
-let lastX=null;
-document.getElementById('look').addEventListener('touchmove',e=>{
-  let x=e.touches[0].clientX; if(lastX!==null) camera.rotation.y-=(x-lastX)*0.008; lastX=x;
-});
 
 function shoot(){
   let ray=new THREE.Raycaster(); ray.setFromCamera({x:0,y:0},camera);
@@ -115,17 +152,23 @@ function shoot(){
     if(left===0){ document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='MISSION COMPLETE<br>COMMANDO WINS!<br><br><button onclick="location.reload()">PLAY AGAIN</button>'; }
   }
 }
-document.getElementById('fire').addEventListener('click',shoot);
+document.getElementById('fire').addEventListener('touchstart',function(e){ e.stopPropagation(); shoot(); });
 
 function animate(){
   requestAnimationFrame(animate);
-  let isWalking=false;
-  if(keys['w']||moving){ camera.position.z-=0.12; isWalking=true; }
-  if(keys['s']) camera.position.z+=0.12;
-  if(keys['a']) camera.position.x-=0.12;
-  if(keys['d']) camera.position.x+=0.12;
-  if(isWalking){ walkTime+=0.3; camera.position.y=1.7+Math.sin(walkTime)*0.05; gunGroup.position.y=-0.35+Math.sin(walkTime)*0.02; }
-  enemies.forEach(e=>{ e.position.z+=0.015; e.rotation.y+=0.01; if(e.position.z>-1 && Math.random()<0.008){ hp-=1; document.getElementById('hp').innerText=hp; if(hp<=0){ document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='GAME OVER<br><button onclick="location.reload()">TRY AGAIN</button>'; } } });
+  let dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; dir.normalize();
+  let right=new THREE.Vector3().crossVectors(dir,new THREE.Vector3(0,1,0));
+  let mx=0, mz=0;
+  if(keys['w']) mz+=1; if(keys['s']) mz-=1; if(keys['a']) mx-=1; if(keys['d']) mx+=1;
+  // Joystick: Upar = Aage, Neeche = Peeche, Dayen/Bayen = Side
+  mx+=joyX; mz+=-joyY;
+  let isWalking=(mx!==0 || mz!==0);
+  if(isWalking){
+    camera.position.addScaledVector(dir,mz*0.12);
+    camera.position.addScaledVector(right,mx*0.12);
+    walkTime+=0.3; camera.position.y=1.7+Math.sin(walkTime)*0.05;
+  }
+  enemies.forEach(e=>{ e.position.z+=0.015; if(e.position.z>-1 && Math.random()<0.008){ hp-=1; document.getElementById('hp').innerText=hp; if(hp<=0){ document.getElementById('msg').style.display='block'; document.getElementById('msg').innerHTML='GAME OVER<br><button onclick="location.reload()">TRY AGAIN</button>'; } } });
   renderer.render(scene,camera);
 }
 animate();
